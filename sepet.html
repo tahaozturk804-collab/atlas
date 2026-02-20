@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AtlasMarket - Sepet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { background:#121417; color:#fff; font-family:'Poppins',sans-serif; margin:0; }
+    .wrap { max-width:1000px; margin:40px auto; padding:0 16px; }
+    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .btn { border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
+    .btn-main { background:#27ae60; color:#fff; }
+    .btn-danger { background:#d63031; color:#fff; }
+    .card { background:#1c1f23; border:1px solid #2b2e33; border-radius:14px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .price { color:#27ae60; font-weight:700; }
+    .summary { background:#1c1f23; border:1px solid #2b2e33; border-radius:14px; padding:16px; margin-top:20px; }
+    .row { display:flex; justify-content:space-between; margin:8px 0; }
+    input { width:100%; padding:10px; border-radius:8px; border:1px solid #2b2e33; background:#121417; color:#fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>Sepetim</h1>
+      <div>
+        <a href="market.html" class="btn btn-main" style="text-decoration:none;">← Markete Dön</a>
+        <a href="index.html" class="btn" style="text-decoration:none;background:#2b2e33;color:#fff;">Ana Sayfa</a>
+      </div>
+    </div>
+
+    <div id="cartList"></div>
+
+    <div class="summary">
+      <div class="row"><span>Bakiye</span><strong id="balance">0 ₺</strong></div>
+      <div class="row"><span>Ara Toplam</span><strong id="subtotal">0 ₺</strong></div>
+      <div class="row"><span>İndirim</span><strong id="discount">0 ₺</strong></div>
+      <div class="row"><span>Toplam</span><strong id="total">0 ₺</strong></div>
+      <div style="margin-top:12px;">
+        <input id="couponInput" type="text" placeholder="Kupon kodu (opsiyonel)">
+      </div>
+      <button class="btn btn-main" style="margin-top:12px;width:100%;" onclick="checkout()">Kredi ile Öde</button>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://atlasnetwork.tahaozturk804.workers.dev";
+    const user = localStorage.getItem('atlas_session');
+    const cartKey = () => `atlas_cart_${user || 'guest'}`;
+
+    let allData = { users: [], products: [] };
+    let cart = [];
+
+    const readCart = () => {
+      try { return JSON.parse(localStorage.getItem(cartKey())) || []; } catch { return []; }
+    };
+    const writeCart = (items) => localStorage.setItem(cartKey(), JSON.stringify(items));
+
+    async function load() {
+      if (!user) {
+        location.href = 'login.html';
+        return;
+      }
+
+      const res = await fetch(API + '/api/get-all');
+      allData = await res.json();
+      cart = readCart();
+      render();
+    }
+
+    function cartTotals() {
+      const subtotal = cart.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.quantity) || 1)), 0);
+      return { subtotal, total: subtotal };
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(i => String(i.productId) !== String(productId));
+      writeCart(cart);
+      render();
+    }
+
+    function render() {
+      const root = document.getElementById('cartList');
+      if (!cart.length) {
+        root.innerHTML = '<p>Sepetin boş.</p>';
+      } else {
+        root.innerHTML = cart.map(i => `
+          <div class="card">
+            <div>
+              <div style="font-size:24px;">${i.image || '📦'} ${i.name}</div>
+              <small>Adet: ${i.quantity || 1}</small>
+            </div>
+            <div style="text-align:right;">
+              <div class="price">${(Number(i.price) || 0) * (Number(i.quantity) || 1)} ₺</div>
+              <button class="btn btn-danger" onclick="removeFromCart('${i.productId}')">Sepetten Kaldır</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const profile = (allData.users || []).find(u => u.username === user);
+      const bakiye = Number(profile?.bakiye || 0);
+      const { subtotal } = cartTotals();
+      document.getElementById('balance').textContent = `${bakiye} ₺`;
+      document.getElementById('subtotal').textContent = `${subtotal} ₺`;
+      document.getElementById('discount').textContent = `0 ₺`;
+      document.getElementById('total').textContent = `${subtotal} ₺`;
+    }
+
+    async function checkout() {
+      if (!cart.length) return alert('Sepet boş.');
+
+      const couponCode = document.getElementById('couponInput').value.trim();
+      const payload = {
+        user,
+        couponCode: couponCode || null,
+        items: cart.map(i => ({ productId: i.productId, quantity: Number(i.quantity) || 1 }))
+      };
+
+      const res = await fetch(API + '/checkout-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      if (!res.ok) return alert(text);
+
+      const data = JSON.parse(text);
+      document.getElementById('discount').textContent = `${data.discount || 0} ₺`;
+      document.getElementById('total').textContent = `${data.total || 0} ₺`;
+      writeCart([]);
+      cart = [];
+      alert('Ödeme başarılı!');
+      await load();
+    }
+
+    load();
+  </script>
+</body>
+</html>

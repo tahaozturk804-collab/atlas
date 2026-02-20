@@ -61,44 +61,47 @@
             <p style="color: var(--text-muted);">Oyuncuların sorunlarını ve sorularını buradan yanıtla.</p>
         </div>
 
-        <div class="ticket-list">
-            <div class="ticket-card">
-                <div class="ticket-info">
-                    <span class="status-badge status-open">Bekliyor</span>
-                    <h3>Ödeme yaparken hata aldım</h3>
-                    <div class="ticket-meta">
-                        <span><i class="fa-regular fa-user"></i> TahaOzturk</span>
-                        <span><i class="fa-regular fa-clock"></i> 5 Dakika Önce</span>
-                    </div>
-                </div>
-                <button class="btn-view">Talebi Oku</button>
-            </div>
-
-            <div class="ticket-card">
-                <div class="ticket-info">
-                    <span class="status-badge status-open">Bekliyor</span>
-                    <h3>Hile Bildirimi: "xPlayer_01"</h3>
-                    <div class="ticket-meta">
-                        <span><i class="fa-regular fa-user"></i> DemirKral</span>
-                        <span><i class="fa-regular fa-clock"></i> 2 Saat Önce</span>
-                    </div>
-                </div>
-                <button class="btn-view">Talebi Oku</button>
-            </div>
-
-            <div class="ticket-card" style="opacity: 0.7;">
-                <div class="ticket-info">
-                    <span class="status-badge status-closed">Kapatıldı</span>
-                    <h3>VIP yetkilerim gelmedi</h3>
-                    <div class="ticket-meta">
-                        <span><i class="fa-regular fa-user"></i> Mehmet_12</span>
-                        <span><i class="fa-regular fa-clock"></i> 1 Gün Önce</span>
-                    </div>
-                </div>
-                <button class="btn-view" style="background:#30363d; color:#fff;">Arşive Bak</button>
-            </div>
+        <div class="ticket-list" id="adminTicketList">
+            <p style="color:#8b949e;">Destek talepleri yükleniyor...</p>
         </div>
     </main>
+
+
+<script>
+const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
+
+async function loadAdminTickets() {
+  const list = document.getElementById('adminTicketList');
+  try {
+    const res = await fetch(`${API}/api/get-all`);
+    const data = await res.json();
+    const tickets = data.tickets || [];
+
+    if (!tickets.length) {
+      list.innerHTML = '<p style="color:#8b949e;">Henüz destek talebi yok.</p>';
+      return;
+    }
+
+    list.innerHTML = tickets.map(t => `
+      <div class="ticket-card" style="opacity:${t.status === 'Kapandı' ? 0.7 : 1}">
+        <div class="ticket-info">
+          <h3>${t.title}</h3>
+          <div class="ticket-meta">
+            <span>👤 ${t.user}</span>
+            <span>📁 ${t.category || 'Genel'}</span>
+            <span>🕒 ${t.date || '-'}</span>
+            <span style="color:${t.status === 'Kapandı' ? '#ff4d4d' : '#00ff88'}">${t.status}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    list.innerHTML = '<p style="color:#ff4d4d;">Destek talepleri yüklenemedi.</p>';
+  }
+}
+
+loadAdminTickets();
+</script>
 
 </body>
 </html>
