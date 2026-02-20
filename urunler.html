@@ -66,41 +66,97 @@
                 <h1>🛒 Mağaza Yönetimi</h1>
                 <p style="color: var(--text-muted);">Market ürünlerini ve fiyatlandırmayı yönet.</p>
             </div>
-            <button class="btn-add"><i class="fa-solid fa-plus"></i> Yeni Ürün Ekle</button>
+            <button class="btn-add" onclick="addProductPrompt()"><i class="fa-solid fa-plus"></i> Yeni Ürün Ekle</button>
         </div>
 
-        <div class="product-grid">
-            <div class="product-card">
-                <div class="product-img">⚔️</div>
-                <div class="product-title">VIP+ Üyelik</div>
-                <div class="product-price">₺ 75.00</div>
-                <div class="product-actions">
-                    <button class="btn-action btn-edit">Düzenle</button>
-                    <button class="btn-action btn-delete">Sil</button>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-img">💎</div>
-                <div class="product-title">1000 Atlas Kredi</div>
-                <div class="product-price">₺ 100.00</div>
-                <div class="product-actions">
-                    <button class="btn-action btn-edit">Düzenle</button>
-                    <button class="btn-action btn-delete">Sil</button>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-img">📦</div>
-                <div class="product-title">Maden Kasası x5</div>
-                <div class="product-price">₺ 30.00</div>
-                <div class="product-actions">
-                    <button class="btn-action btn-edit">Düzenle</button>
-                    <button class="btn-action btn-delete">Sil</button>
-                </div>
-            </div>
+        <div class="product-grid" id="productGrid">
+            <p style="color:#8b949e;">Ürünler yükleniyor...</p>
         </div>
     </main>
+
+
+<script>
+const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
+
+async function loadProducts() {
+  const grid = document.getElementById('productGrid');
+  try {
+    const res = await fetch(`${API}/api/get-all`);
+    const data = await res.json();
+    const products = data.products || [];
+
+    if (!products.length) {
+      grid.innerHTML = '<p style="color:#8b949e;">Henüz ürün yok.</p>';
+      return;
+    }
+
+    grid.innerHTML = products.map(p => `
+      <div class="product-card">
+        <div class="product-img">${p.image || '📦'}</div>
+        <div class="product-title">${p.name || 'İsimsiz Ürün'}</div>
+        <div class="product-price">₺ ${Number(p.price || 0).toFixed(2)}</div>
+        <div class="product-actions">
+          <button class="btn-action btn-edit" onclick="editProduct('${p.id}')">Düzenle</button>
+          <button class="btn-action btn-delete" onclick="deleteProduct('${p.id}')">Sil</button>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    grid.innerHTML = '<p style="color:#ff4d4d;">Ürünler yüklenemedi.</p>';
+  }
+}
+
+async function addProductPrompt() {
+  const name = prompt('Ürün adı girin:');
+  if (!name) return;
+  const priceText = prompt('Ürün fiyatı girin:', '0');
+  if (priceText === null) return;
+  const price = Number(priceText);
+  if (Number.isNaN(price)) return alert('Geçersiz fiyat.');
+  const category = prompt('Kategori (opsiyonel):', '') || '';
+  const image = prompt('Emoji/Görsel metni (opsiyonel):', '📦') || '📦';
+
+  const res = await fetch(`${API}/api/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', data: { id: Date.now().toString(), name, price, category, image } })
+  });
+
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+async function editProduct(id) {
+  const name = prompt('Yeni ürün adı:');
+  if (!name) return;
+  const priceText = prompt('Yeni fiyat:', '0');
+  if (priceText === null) return;
+  const price = Number(priceText);
+  if (Number.isNaN(price)) return alert('Geçersiz fiyat.');
+
+  const res = await fetch(`${API}/api/update`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', id, updates: { name, price } })
+  });
+
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Ürünü silmek istiyor musunuz?')) return;
+  const res = await fetch(`${API}/api/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', id })
+  });
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+loadProducts();
+</script>
 
 </body>
 </html>
