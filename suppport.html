@@ -129,7 +129,7 @@
 <div class="sidebar">
     <div class="logo">ATLAS</div>
     <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i> Ana Sayfa</a>
-    <a href="support.html" class="nav-item active"><i class="fa-solid fa-headset"></i> Destek Hattı</a>
+    <a href="suppport.html" class="nav-item active"><i class="fa-solid fa-headset"></i> Destek Hattı</a>
     <a href="market.html" class="nav-item"><i class="fa-solid fa-cart-shopping"></i> Market</a>
 </div>
 
@@ -205,6 +205,7 @@
 
         const res = await fetch(`${API}/create-ticket`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user, title, category, message })
         });
 
@@ -216,7 +217,7 @@
 
     async function loadTickets() {
         if(!user) return window.location.href = 'login.html';
-        const res = await fetch(`${API}/my-tickets`, { method: 'POST', body: JSON.stringify({ user }) });
+        const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
         const tickets = await res.json();
         const list = document.getElementById('ticketList');
         
@@ -241,7 +242,7 @@
 
     async function viewTicket(id) {
         activeId = id;
-        const res = await fetch(`${API}/my-tickets`, { method: 'POST', body: JSON.stringify({ user }) });
+        const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
         const t = (await res.json()).find(x => x.id === id);
 
         document.getElementById('chatBox').innerHTML = t.messages.map(m => `
@@ -268,6 +269,7 @@
 
         await fetch(`${API}/reply-ticket`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ticketId: activeId, sender: user, text, image: base64Img, isAdmin: false })
         });
         
@@ -280,7 +282,7 @@
 
     async function closeTicket() {
         if(!confirm("Talebi kapatmak istiyor musunuz?")) return;
-        await fetch(`${API}/close-ticket`, { method: 'POST', body: JSON.stringify({ ticketId: activeId }) });
+        await fetch(`${API}/close-ticket`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticketId: activeId }) });
         showToast("Talep kapatıldı.");
         setTimeout(() => location.reload(), 1200);
     }

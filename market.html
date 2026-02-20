@@ -128,71 +128,85 @@
     </nav>
 
     <div class="categories" id="categoryMenu">
-        <button class="cat-btn active" onclick="filterMarket('Hepsi')">Tümü</button>
+        <button class="cat-btn active" onclick="filterCategory('Tümü')">Tümü</button>
     </div>
 
-    <div id="productContainer" class="market-grid">
-        <p style="text-align:center; color:gray;">Ürünler yükleniyor...</p>
-    </div>
-
-<div class="categories" id="categoryButtons">
-    <button class="cat-btn active" onclick="filterCategory('Tümü')">Tümü</button>
+    <div id="marketGrid" class="market-grid">
+    <p style="text-align:center; color:gray;">Ürünler yükleniyor...</p>
 </div>
-
-<div id="marketGrid" class="market-grid active">
-    </div>
 
 <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     let db = { users: [], products: [], categories: [] };
-    
-    // BURASI ÖNEMLİ: Giriş yapan kullanıcıyı nasıl tutuyorsan onu buraya ata. 
-    // Örn: Bir login sisteminden gelen kullanıcı adı.
-    let loggedInUser = "denemekullanici"; 
+    let loggedInUser = localStorage.getItem('atlas_session');
 
     async function loadMarket() {
+        if (!loggedInUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+
         try {
             const res = await fetch(API + '/api/get-all');
+            if (!res.ok) throw new Error('API yanıt vermedi');
             db = await res.json();
-            
-            // 1. Bakiyeyi Güncelle
-            const user = db.users.find(u => u.username === loggedInUser);
-            if(user) {
-                document.getElementById('userBalance').innerText = `Bakiye: ${user.bakiye || 0}₺`;
-            }
 
-            // 2. Kategorileri Doldur
+            const user = (db.users || []).find(u => u.username === loggedInUser);
+            if (user) document.getElementById('userBalance').innerText = `Bakiye: ${user.bakiye || 0}₺`;
+
             renderCategories();
-
-            // 3. Ürünleri Listele
             renderProducts(db.products || []);
-        } catch (e) { console.error("Market verisi çekilemedi."); }
+        } catch (e) {
+            document.getElementById('marketGrid').innerHTML = '<p style="text-align:center;color:#ff7675;">Market verisi alınamadı.</p>'
+            console.error("Market verisi çekilemedi.", e);
+        }
     }
 
     function renderCategories() {
         const menu = document.getElementById('categoryMenu');
-        if(!menu) return;
-        const buttons = (db.categories || []).map(c => `
-            <button class="cat-btn" onclick="filterCategory('${c.name}')">${c.name}</button>
-        `).join('');
+        if (!menu) return;
+        const buttons = (db.categories || []).map(c =>
+            `<button class="cat-btn" onclick="filterCategory('${c.name}')">${c.name}</button>`
+        ).join('');
         menu.innerHTML = '<button class="cat-btn active" onclick="filterCategory(\'Tümü\')">Tümü</button>' + buttons;
     }
 
     function renderProducts(list) {
         const container = document.getElementById('marketGrid');
+        if (!list.length) {
+            container.innerHTML = '<p style="text-align:center; color:gray;">Henüz ürün yok.</p>';
+            return;
+        }
+
         container.innerHTML = list.map(p => `
             <div class="product-card">
                 <div class="product-img"><span>${p.image || '📦'}</span></div>
                 <h3>${p.name}</h3>
                 <div class="price">${p.price} ₺</div>
-                <button class="buy-btn" onclick="satinAl('${p.username}', ${p.price})">Satın Al</button>
+                <button class="buy-btn" onclick="satinAl('${p.id}')">Satın Al</button>
             </div>
         `).join('');
     }
 
     function filterCategory(catName) {
-        const filtered = catName === 'Tümü' ? db.products : db.products.filter(p => p.category === catName);
+        const filtered = catName === 'Tümü' ? (db.products || []) : (db.products || []).filter(p => p.category === catName);
         renderProducts(filtered);
+    }
+
+    async function satinAl(productId) {
+        if (!loggedInUser) return;
+
+        const res = await fetch(API + '/buy-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: loggedInUser, productId })
+        });
+
+        const msg = await res.text();
+        if (!res.ok) return alert(msg);
+
+        alert('Satın alma başarılı!');
+        await loadMarket();
     }
 
     window.onload = loadMarket;
