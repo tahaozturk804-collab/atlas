@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mağaza Yönetimi - AtlasNetwork</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; --danger: #ff4d4d; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); display: flex; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: var(--sidebar-bg); height: 100vh; position: fixed; border-right: 1px solid #30363d; display: flex; flex-direction: column; }
+        .sidebar-logo { padding: 30px; text-align: center; }
+        .sidebar-logo img { width: 60px; filter: drop-shadow(0 0 8px var(--primary)); }
+        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-menu { padding: 10px 15px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; transition: 0.3s; margin-bottom: 5px; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
+        .nav-item i { font-size: 18px; width: 25px; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #30363d; font-size: 12px; text-align: center; }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 40px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { font-size: 24px; color: #fff; margin: 0; }
+        
+        /* BUTTONS */
+        .btn-add { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3); }
+
+        /* PRODUCT GRID */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .product-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 15px; padding: 20px; transition: 0.3s; }
+        .product-card:hover { border-color: var(--primary); }
+        .product-img { width: 100%; height: 150px; background: #0b0e11; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .product-title { font-size: 18px; color: #fff; margin-bottom: 5px; font-weight: 700; }
+        .product-price { color: var(--primary); font-size: 20px; font-weight: 800; margin-bottom: 15px; }
+        .product-actions { display: flex; gap: 10px; }
+        .btn-action { flex: 1; padding: 8px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-edit { background: #30363d; color: #fff; }
+        .btn-delete { background: rgba(255, 77, 77, 0.1); color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo">
+            <h2>Atlas Admin</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="hesaplar.html" class="nav-item"><i class="fa-solid fa-users"></i> Kullanıcı Yönetimi</a>
+            <a href="urunler.html" class="nav-item active"><i class="fa-solid fa-cart-shopping"></i> Mağaza Yönetimi</a>
+            <a href="destek.html" class="nav-item"><i class="fa-solid fa-ticket"></i> Destek Sistemi</a>
+            <a href="basvurular.html" class="nav-item"><i class="fa-solid fa-file-signature"></i> Başvurular</a>
+        </nav>
+        <div class="sidebar-footer">
+            <code style="color: var(--primary);">IP: 157.90.133.100</code>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>🛒 Mağaza Yönetimi</h1>
+                <p style="color: var(--text-muted);">Market ürünlerini ve fiyatlandırmayı yönet.</p>
+            </div>
+            <button class="btn-add"><i class="fa-solid fa-plus"></i> Yeni Ürün Ekle</button>
+        </div>
+
+        <div class="product-grid">
+            <div class="product-card">
+                <div class="product-img">⚔️</div>
+                <div class="product-title">VIP+ Üyelik</div>
+                <div class="product-price">₺ 75.00</div>
+                <div class="product-actions">
+                    <button class="btn-action btn-edit">Düzenle</button>
+                    <button class="btn-action btn-delete">Sil</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-img">💎</div>
+                <div class="product-title">1000 Atlas Kredi</div>
+                <div class="product-price">₺ 100.00</div>
+                <div class="product-actions">
+                    <button class="btn-action btn-edit">Düzenle</button>
+                    <button class="btn-action btn-delete">Sil</button>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-img">📦</div>
+                <div class="product-title">Maden Kasası x5</div>
+                <div class="product-price">₺ 30.00</div>
+                <div class="product-actions">
+                    <button class="btn-action btn-edit">Düzenle</button>
+                    <button class="btn-action btn-delete">Sil</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

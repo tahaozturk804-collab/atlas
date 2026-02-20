@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destek Sistemi - AtlasNetwork</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; --warning: #ffab00; --success: #00ff88; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); display: flex; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: var(--sidebar-bg); height: 100vh; position: fixed; border-right: 1px solid #30363d; display: flex; flex-direction: column; }
+        .sidebar-logo { padding: 30px; text-align: center; }
+        .sidebar-logo img { width: 60px; filter: drop-shadow(0 0 8px var(--primary)); }
+        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-menu { padding: 10px 15px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; transition: 0.3s; margin-bottom: 5px; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
+        .nav-item i { font-size: 18px; width: 25px; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #30363d; font-size: 12px; text-align: center; }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 40px; }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 24px; color: #fff; margin: 0; }
+
+        /* TICKET LIST */
+        .ticket-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .ticket-card:hover { border-color: var(--primary); transform: translateX(5px); }
+        .ticket-info h3 { margin: 0 0 5px 0; font-size: 16px; color: #fff; }
+        .ticket-meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 15px; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .status-open { background: rgba(255, 171, 0, 0.1); color: var(--warning); border: 1px solid var(--warning); }
+        .status-closed { background: rgba(139, 148, 158, 0.1); color: var(--text-muted); border: 1px solid var(--text-muted); }
+        
+        .btn-view { background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo">
+            <h2>Atlas Admin</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="hesaplar.html" class="nav-item"><i class="fa-solid fa-users"></i> Kullanıcı Yönetimi</a>
+            <a href="urunler.html" class="nav-item"><i class="fa-solid fa-cart-shopping"></i> Mağaza Yönetimi</a>
+            <a href="destek.html" class="nav-item active"><i class="fa-solid fa-ticket"></i> Destek Sistemi</a>
+            <a href="basvurular.html" class="nav-item"><i class="fa-solid fa-file-signature"></i> Başvurular</a>
+        </nav>
+        <div class="sidebar-footer">
+            <code style="color: var(--primary);">IP: 157.90.133.100</code>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>🎫 Destek Talepleri</h1>
+            <p style="color: var(--text-muted);">Oyuncuların sorunlarını ve sorularını buradan yanıtla.</p>
+        </div>
+
+        <div class="ticket-list">
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <span class="status-badge status-open">Bekliyor</span>
+                    <h3>Ödeme yaparken hata aldım</h3>
+                    <div class="ticket-meta">
+                        <span><i class="fa-regular fa-user"></i> TahaOzturk</span>
+                        <span><i class="fa-regular fa-clock"></i> 5 Dakika Önce</span>
+                    </div>
+                </div>
+                <button class="btn-view">Talebi Oku</button>
+            </div>
+
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <span class="status-badge status-open">Bekliyor</span>
+                    <h3>Hile Bildirimi: "xPlayer_01"</h3>
+                    <div class="ticket-meta">
+                        <span><i class="fa-regular fa-user"></i> DemirKral</span>
+                        <span><i class="fa-regular fa-clock"></i> 2 Saat Önce</span>
+                    </div>
+                </div>
+                <button class="btn-view">Talebi Oku</button>
+            </div>
+
+            <div class="ticket-card" style="opacity: 0.7;">
+                <div class="ticket-info">
+                    <span class="status-badge status-closed">Kapatıldı</span>
+                    <h3>VIP yetkilerim gelmedi</h3>
+                    <div class="ticket-meta">
+                        <span><i class="fa-regular fa-user"></i> Mehmet_12</span>
+                        <span><i class="fa-regular fa-clock"></i> 1 Gün Önce</span>
+                    </div>
+                </div>
+                <button class="btn-view" style="background:#30363d; color:#fff;">Arşive Bak</button>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

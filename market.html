@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AtlasNetwork - Mağaza</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #27ae60;
+            --dark-bg: #121417;
+            --card-bg: #1c1f23;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 8%;
+            background: #222;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .logo { font-size: 24px; font-weight: 800; color: white; text-decoration: none; }
+        .logo span { color: var(--primary); }
+
+        .user-nav { display: flex; align-items: center; gap: 20px; }
+        .balance-box { background: #333; padding: 5px 15px; border-radius: 5px; font-weight: 600; }
+        .topup-btn { background: var(--primary); color: white; text-decoration: none; padding: 5px 15px; border-radius: 5px; font-size: 14px; }
+
+        /* KATEGORİ MENÜSÜ */
+        .categories {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .cat-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .cat-btn.active, .cat-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(39, 174, 96, 0.4);
+        }
+
+        /* ÜRÜN GRİDİ */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 0.3fr));
+            gap: 30px;
+            padding: 0 10%;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+        }
+
+        .product-img {
+            font-size: 60px; /* Emoji kullanırsan diye */
+            width: 100%;
+            height: 100px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-img img {
+            max-width: 100px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+        }
+
+        .price { font-size: 28px; font-weight: 800; color: var(--primary); margin: 20px 0; }
+
+        .buy-btn {
+            width: 100%; background: var(--primary); color: white;
+            border: none; padding: 15px; border-radius: 10px;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .buy-btn:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">Atlas<span>Market</span></a>
+        <div class="user-nav">
+            <div class="balance-box" id="userBalance">Bakiye: 0₺</div>
+            <a href="profile.html" class="topup-btn">Profilim</a>
+            <a href="index.html" style="color:white; text-decoration:none; font-size:14px;">← Geri</a>
+        </div>
+    </nav>
+
+    <div class="categories" id="categoryMenu">
+        <button class="cat-btn active" onclick="filterMarket('Hepsi')">Tümü</button>
+    </div>
+
+    <div id="productContainer" class="market-grid">
+        <p style="text-align:center; color:gray;">Ürünler yükleniyor...</p>
+    </div>
+
+<div class="categories" id="categoryButtons">
+    <button class="cat-btn active" onclick="filterCategory('Tümü')">Tümü</button>
+</div>
+
+<div id="marketGrid" class="market-grid active">
+    </div>
+
+<script>
+    const API = "https://atlasnetwork.tahaozturk804.workers.dev";
+    let db = { users: [], products: [], categories: [] };
+    
+    // BURASI ÖNEMLİ: Giriş yapan kullanıcıyı nasıl tutuyorsan onu buraya ata. 
+    // Örn: Bir login sisteminden gelen kullanıcı adı.
+    let loggedInUser = "denemekullanici"; 
+
+    async function loadMarket() {
+        try {
+            const res = await fetch(API + '/api/get-all');
+            db = await res.json();
+            
+            // 1. Bakiyeyi Güncelle
+            const user = db.users.find(u => u.username === loggedInUser);
+            if(user) {
+                document.getElementById('userBalance').innerText = `Bakiye: ${user.bakiye || 0}₺`;
+            }
+
+            // 2. Kategorileri Doldur
+            renderCategories();
+
+            // 3. Ürünleri Listele
+            renderProducts(db.products || []);
+        } catch (e) { console.error("Market verisi çekilemedi."); }
+    }
+
+    function renderCategories() {
+        const menu = document.getElementById('categoryMenu');
+        if(!menu) return;
+        const buttons = (db.categories || []).map(c => `
+            <button class="cat-btn" onclick="filterCategory('${c.name}')">${c.name}</button>
+        `).join('');
+        menu.innerHTML = '<button class="cat-btn active" onclick="filterCategory(\'Tümü\')">Tümü</button>' + buttons;
+    }
+
+    function renderProducts(list) {
+        const container = document.getElementById('marketGrid');
+        container.innerHTML = list.map(p => `
+            <div class="product-card">
+                <div class="product-img"><span>${p.image || '📦'}</span></div>
+                <h3>${p.name}</h3>
+                <div class="price">${p.price} ₺</div>
+                <button class="buy-btn" onclick="satinAl('${p.username}', ${p.price})">Satın Al</button>
+            </div>
+        `).join('');
+    }
+
+    function filterCategory(catName) {
+        const filtered = catName === 'Tümü' ? db.products : db.products.filter(p => p.category === catName);
+        renderProducts(filtered);
+    }
+
+    window.onload = loadMarket;
+</script>
+</body>
+</html>

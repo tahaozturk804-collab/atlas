@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AtlasNetwork | SMP Macerası</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #27ae60;
+            --dark-bg: #0f1215;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon: #00ff88;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a2a1f 0%, var(--dark-bg) 100%);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 8%;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 25px; }
+        .logo { font-size: 24px; font-weight: 800; white-space: nowrap; }
+        .logo span { color: var(--primary); }
+
+        /* CANLI DURUM GÖSTERGESİ (Senin istediğin tipte) */
+        .live-status-card {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 255, 136, 0.03);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            padding: 6px 15px;
+            border-radius: 12px;
+            gap: 12px;
+        }
+
+        .status-dot-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 8px;
+            height: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon);
+        }
+
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--neon);
+            border-radius: 50%;
+            animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(3.5); opacity: 0; }
+        }
+
+        #online-sayisi { font-weight: 800; color: var(--neon); font-size: 16px; }
+        .status-label { font-size: 10px; font-weight: 800; color: var(--neon); opacity: 0.9; }
+
+        .menu-links { display: flex; align-items: center; }
+        .menu-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: 600; transition: 0.3s; font-size: 14px; }
+        .menu-links a:hover { color: var(--primary); }
+        
+        .market-btn { background: var(--primary); padding: 8px 20px; border-radius: 5px; color: white !important; }
+        .market-btn:hover { background: #2ecc71 !important; box-shadow: 0 0 15px var(--primary); transform: translateY(-2px); }
+
+        .user-profile { display: flex; align-items: center; gap: 15px; margin-left: 20px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px; }
+        .user-name { color: var(--primary); font-weight: 800; }
+        .logout-link { color: #ff4757 !important; font-size: 12px; cursor: pointer; }
+
+        .hero { text-align: center; padding: 120px 20px; }
+        .hero h1 { font-size: 3.5rem; margin: 0; line-height: 1.1; }
+        .highlight { color: var(--primary); text-shadow: 0 0 20px rgba(39, 174, 96, 0.5); }
+        
+        .ip-box {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: rgba(0,0,0,0.5);
+            border: 2px dashed var(--primary);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .ip-box:hover { background: var(--primary); transform: scale(1.05); }
+        .ip-text { font-family: monospace; font-size: 1.2rem; display: block; }
+        .click-to-copy { font-size: 0.8rem; opacity: 0.7; }
+
+        /* Kapalı Durum Rengi */
+        .dot-offline { background-color: #ff4757 !important; box-shadow: 0 0 10px #ff4757 !important; }
+        .dot-offline::after { background-color: #ff4757 !important; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="logo">Atlas<span>Network</span></div>
+            
+            <div class="live-status-card">
+                <div class="status-dot-container">
+                    <span id="status-dot" class="status-dot"></span>
+                </div>
+                <div style="display: flex; flex-direction: column; line-height: 1;">
+                    <span id="online-sayisi">0</span>
+                    <span id="status-text" class="status-label">CANLI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-links" id="navbar-menu">
+            <a href="index.html">Ana Sayfa</a>
+            <a href="apply.html">Yetkili Başvurusu</a>
+            <a href="suppport.html">Destek</a>
+            <a href="profile.html">Profil</a>
+            <a href="market.html">Market</a>
+            <div id="auth-buttons" style="display: flex;">
+                <a href="login.html">Giriş Yap</a>
+                <a href="register.html" class="market-btn">Kayıt Ol</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <h1>Vahşi Doğada <br><span class="highlight">Hükmetmeye Hazır mısın?</span></h1>
+        <p style="margin-top: 20px; opacity: 0.8;">Türkiye'nin en gelişmiş SMP deneyimi AtlasNetwork'te seni bekliyor.</p>
+        
+        <div class="ip-box" onclick="ipKopyala()">
+            <span class="ip-text">157.90.133.100:25629</span>
+            <span class="click-to-copy">Kopyalamak için tıkla!</span>
+        </div>
+    </header>
+
+    <script src="online.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInUser = localStorage.getItem('atlas_session');
+            if (loggedInUser) {
+                const authSection = document.getElementById('auth-buttons');
+                const menu = document.getElementById('navbar-menu');
+                if(authSection) authSection.remove();
+                menu.innerHTML += `
+                    <div class="user-profile">
+                        <span class="user-name">👤 ${loggedInUser}</span>
+                        <a onclick="cikisYap()" class="logout-link">Çıkış Yap</a>
+                    </div>
+                `;
+            }
+        });
+
+        function cikisYap() {
+            localStorage.removeItem('atlas_session');
+            window.location.reload();
+        }
+
+        function ipKopyala() {
+            const ip = "157.90.133.100:25629";
+            navigator.clipboard.writeText(ip);
+            alert("IP Adresi Kopyalandı! Sunucuda görüşürüz kral.");
+        }
+    </script>
+</body>
+</html>

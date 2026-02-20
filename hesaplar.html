@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Yönetimi - AtlasNetwork</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); display: flex; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: var(--sidebar-bg); height: 100vh; position: fixed; border-right: 1px solid #30363d; display: flex; flex-direction: column; }
+        .sidebar-logo { padding: 30px; text-align: center; }
+        .sidebar-logo img { width: 60px; filter: drop-shadow(0 0 8px var(--primary)); }
+        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-menu { padding: 10px 15px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; transition: 0.3s; margin-bottom: 5px; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
+        .nav-item i { font-size: 18px; width: 25px; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #30363d; font-size: 12px; text-align: center; }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 40px; }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 24px; color: #fff; margin-bottom: 5px; }
+        .page-header p { color: var(--text-muted); }
+
+        /* TABLE */
+        .card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: rgba(255,255,255,0.02); padding: 15px; color: var(--text-muted); font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-top: 1px solid #30363d; font-size: 14px; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-info img { width: 32px; height: 32px; border-radius: 6px; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge-admin { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
+        .btn-edit { background: #30363d; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-edit:hover { background: #444c56; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo">
+            <h2>Atlas Admin</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="hesaplar.html" class="nav-item active"><i class="fa-solid fa-users"></i> Kullanıcı Yönetimi</a>
+            <a href="urunler.html" class="nav-item"><i class="fa-solid fa-cart-shopping"></i> Mağaza Yönetimi</a>
+            <a href="destek.html" class="nav-item"><i class="fa-solid fa-ticket"></i> Destek Sistemi</a>
+            <a href="basvurular.html" class="nav-item"><i class="fa-solid fa-file-signature"></i> Başvurular</a>
+        </nav>
+        <div class="sidebar-footer">
+            <code style="color: var(--primary);">IP: 157.90.133.100</code>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>👥 Kullanıcı Yönetimi</h1>
+            <p>Sunucundaki tüm oyuncuları görüntüle, düzenle veya cezalandır.</p>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kullanıcı</th>
+                        <th>Kredi</th>
+                        <th>Yetki</th>
+                        <th>Kayıt Tarihi</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <img src="https://mc-heads.net/avatar/Steve" alt="avatar">
+                                <span>TahaOzturk</span>
+                            </div>
+                        </td>
+                        <td>₺ 250.00</td>
+                        <td><span class="badge badge-admin">Kurucu</span></td>
+                        <td>12.02.2024</td>
+                        <td><button class="btn-edit">Düzenle</button></td>
+                    </tr>
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+</body>
+</html>
