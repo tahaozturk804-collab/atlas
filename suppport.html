@@ -5,12 +5,12 @@
     <title>AtlasNetwork | Destek</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg: #080a0c; --card: #111418; --primary: #00ff88; --text: #fff; --border: #1e293b; }
+        :root { --bg: #080a0c; --card: #111418; --primary: #00ff88; --text: #fff; --border: #1e293b; --muted:#8b949e; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; }
-        .sidebar { width: 250px; background: #000; height: 100vh; padding: 20px; border-right: 1px solid var(--border); }
+        .sidebar { width: 250px; background: #000; height: 100vh; padding: 20px; border-right: 1px solid var(--border); box-sizing:border-box; }
         .main { flex: 1; padding: 40px; }
         .ticket-card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
-        .chat-box { height: 400px; overflow-y: auto; background: #000; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-box { height: 420px; overflow-y: auto; background: #000; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px; border:1px solid var(--border); }
         .msg { padding: 10px; border-radius: 10px; max-width: 80%; }
         .msg.admin { background: #5865f2; align-self: flex-start; }
         .msg.user { background: #1e293b; align-self: flex-end; }
@@ -24,15 +24,17 @@
         <div id="listView">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <h1>Taleplerim</h1>
-                <button class="btn" onclick="openModal()">+ Yeni Talep</button>
+                <button class="btn" onclick="createTicket()">+ Yeni Talep</button>
             </div>
             <div id="ticketList">Yükleniyor...</div>
         </div>
 
         <div id="detailView" style="display:none;">
-            <button onclick="location.reload()" style="color:#aaa; background:none; border:none; cursor:pointer;">← Geri</button>
+            <button onclick="showList()" style="color:#aaa; background:none; border:none; cursor:pointer;">← Geri</button>
+            <h3 id="ticketTitle"></h3>
             <div class="chat-box" id="chatBox"></div>
-            <div style="margin-top:10px; display:flex; gap:10px;">
+            <p id="closedInfo" style="display:none; color:var(--muted)">Bu talep kapatıldığı için yeni mesaj gönderemezsin.</p>
+            <div id="replyArea" style="margin-top:10px; display:flex; gap:10px;">
                 <input type="text" id="replyText" placeholder="Mesajınız...">
                 <button class="btn" onclick="sendReply()">Gönder</button>
             </div>
@@ -45,56 +47,84 @@
         let activeId = null;
 
         async function loadTickets() {
-            const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
+            const list = document.getElementById('ticketList');
+            if (!user) {
+                list.innerHTML = '<p style="color:#ff4d4d;">Destek talebi için giriş yapmalısın.</p>';
+                return;
+            }
+
+            const res = await fetch(`${API}/my-tickets`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user })
+            });
+            if (!res.ok) return list.innerHTML = '<p style="color:#ff4d4d;">Talepler yüklenemedi.</p>';
             const data = await res.json();
-            document.getElementById('ticketList').innerHTML = data.map(t => `<div class="ticket-card"><div><b>${t.title}</b><br><small>${t.status}</small></div><button class="btn" onclick="viewTicket('${t.id}')">Detay</button></div>`).join('');
+            if (!data.length) return list.innerHTML = '<p style="color:var(--muted)">Henüz talebin yok.</p>';
+
+            list.innerHTML = data.map(t => `
+                <div class="ticket-card">
+                    <div>
+                        <b>${t.title}</b><br>
+                        <small style="color:var(--muted)">${t.category || 'Genel'} • ${t.status || 'Açık'}</small>
+                    </div>
+                    <button class="btn" onclick="viewTicket('${t.id}')">Detay</button>
+                </div>
+            `).join('');
         }
 
         async function viewTicket(id) {
             activeId = id;
-            const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
+            const res = await fetch(`${API}/my-tickets`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user })
+            });
             const t = (await res.json()).find(x => x.id === id);
-            document.getElementById('chatBox').innerHTML = t.messages.map(m => `<div class="msg ${m.sender === 'Admin' ? 'admin' : 'user'}"><b>${m.sender}:</b> ${m.text}</div>`).join('');
+            if (!t) return alert('Talep bulunamadı.');
+
+            document.getElementById('ticketTitle').textContent = t.title;
+            document.getElementById('chatBox').innerHTML = (t.messages || []).map(m => `
+                <div class="msg ${m.sender === 'Admin' ? 'admin' : 'user'}">
+                    <div style="font-size:11px; opacity:.75; margin-bottom:4px;">${m.sender}</div>
+                    <div>${m.text}</div>
+                </div>
+            `).join('');
+
+            const isClosed = t.status === 'Kapandı';
+            document.getElementById('closedInfo').style.display = isClosed ? 'block' : 'none';
+            document.getElementById('replyArea').style.display = isClosed ? 'none' : 'flex';
+
             document.getElementById('listView').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
+            const cb = document.getElementById('chatBox'); cb.scrollTop = cb.scrollHeight;
         }
 
         async function sendReply() {
-            const text = document.getElementById('replyText').value;
-            if(!text) return;
-            await fetch(`${API}/reply-ticket`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticketId: activeId, sender: user, text }) });
-            document.getElementById('replyText').value = ''; viewTicket(activeId);
+            const text = document.getElementById('replyText').value.trim();
+            if (!text || !activeId) return;
+            const res = await fetch(`${API}/reply-ticket`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticketId: activeId, sender: user, text })
+            });
+            if (!res.ok) return alert(await res.text());
+            document.getElementById('replyText').value = '';
+            viewTicket(activeId);
         }
 
         async function createTicket() {
-            const title = prompt("Konu:");
-            const message = prompt("Mesajınız:");
-            if(!title || !message) return;
-            await fetch(`${API}/create-ticket`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user, title, category: 'Genel', message }) });
+            const title = prompt('Konu:');
+            const message = prompt('Mesajınız:');
+            const category = prompt('Kategori:', 'Genel') || 'Genel';
+            if (!title || !message) return;
+
+            const res = await fetch(`${API}/create-ticket`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user, title, category, message })
+            });
+            if (!res.ok) return alert(await res.text());
             loadTickets();
         }
 
-        async function viewTicket(id) {
-    activeId = id;
-    const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
-    const t = (await res.json()).find(x => x.id === id);
+        function showList() {
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('listView').style.display = 'block';
+        }
 
-    document.getElementById('chatBox').innerHTML = t.messages.map(m => `
-        <div class="msg ${m.sender === 'Admin' ? 'admin' : 'user'}">
-            <div style="font-size:10px; opacity:0.5; margin-bottom:5px;">${m.sender}</div>
-            <div>${m.text}</div>
-        </div>
-    `).join('');
-
-    if(t.status === 'Kapandı') {
-        document.getElementById('closedOverlay').style.display = 'flex';
-        document.getElementById('replyArea').style.display = 'none';
-    }
-
-    document.getElementById('listView').style.display = 'none';
-    document.getElementById('ticketDetailView').style.display = 'block';
-    const cb = document.getElementById('chatBox'); cb.scrollTop = cb.scrollHeight;
-}
         loadTickets();
     </script>
 </body>

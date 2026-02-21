@@ -4,42 +4,68 @@
     <meta charset="UTF-8">
     <title>Başvuru | Atlas</title>
     <style>
-        body { background: #0a0e14; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .card { background: #161b22; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid #21262d; }
-        input, textarea { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; margin-top: 10px; }
+        body { background: #0a0e14; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #161b22; padding: 30px; border-radius: 12px; width: min(520px, 92vw); border: 1px solid #21262d; }
+        input, textarea, select { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; margin-top: 10px; }
+        textarea { min-height: 110px; resize: vertical; }
         .btn { width: 100%; padding: 12px; background: #00d4aa; border: none; border-radius: 6px; font-weight: bold; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>Yetkili Başvurusu</h2>
-        <input type="text" id="name" placeholder="Adınız">
-        <textarea id="exp" placeholder="Tecrübeleriniz ve neden biz?"></textarea>
+        <input type="text" id="realName" placeholder="Ad Soyad">
+        <input type="text" id="gameName" placeholder="Oyuncu Adı (IGN)">
+        <input type="number" id="age" placeholder="Yaş">
+        <select id="rank">
+            <option value="">Başvuru Türü Seçin</option>
+            <option>Moderatör</option>
+            <option>Admin</option>
+            <option>Rehber</option>
+        </select>
+        <textarea id="experience" placeholder="Tecrübeleriniz"></textarea>
+        <textarea id="whyUs" placeholder="Neden Atlas?"></textarea>
         <button class="btn" onclick="sendApply()">Başvuruyu Gönder</button>
     </div>
     <script>
-        const fullContent = `
-    AD: ${document.getElementById('realName').value}
-    IGN: ${document.getElementById('gameName').value}
-    İLETİŞİM: ${document.getElementById('contact').value}
-    YAŞ: ${document.getElementById('age').value}
-    YETKİ: ${document.getElementById('rank').value}
-    NEDEN: ${document.getElementById('whyUs').value}
-    TECRÜBE: ${document.getElementById('experience').value}
-`;
+        const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
 
-await fetch('https://atlasnetwork.tahaozturk804.workers.dev/submit-apply', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user, content: fullContent })
-});
         async function sendApply() {
             const user = decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
-            const content = `Ad: ${document.getElementById('name').value}\nBilgi: ${document.getElementById('exp').value}`;
-            await fetch("https://atlasnetwork.tahaozturk804.workers.dev/submit-apply", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user, content }) });
-            alert("Başvuru alındı!"); location.href = 'index.html';
+            if (!user) return alert('Başvuru göndermek için giriş yapmalısın.');
+
+            const payload = {
+                realName: document.getElementById('realName').value.trim(),
+                gameName: document.getElementById('gameName').value.trim(),
+                age: document.getElementById('age').value.trim(),
+                rank: document.getElementById('rank').value.trim(),
+                experience: document.getElementById('experience').value.trim(),
+                whyUs: document.getElementById('whyUs').value.trim()
+            };
+
+            if (!payload.realName || !payload.gameName || !payload.age || !payload.rank || !payload.experience || !payload.whyUs) {
+                return alert('Lütfen tüm alanları doldurun.');
+            }
+
+            const content = [
+                `AD: ${payload.realName}`,
+                `IGN: ${payload.gameName}`,
+                `YAŞ: ${payload.age}`,
+                `YETKİ: ${payload.rank}`,
+                `TECRÜBE: ${payload.experience}`,
+                `NEDEN: ${payload.whyUs}`
+            ].join('\n');
+
+            const res = await fetch(`${API}/submit-apply`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, content })
+            });
+
+            if (!res.ok) return alert(await res.text());
+            alert('Başvurun alındı!');
+            location.href = 'index.html';
         }
     </script>
 </body>
 </html>
-

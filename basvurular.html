@@ -6,101 +6,81 @@
     <title>Başvurular - AtlasNetwork</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; --info: #00d2ff; }
+        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; --info: #00d2ff; --danger:#ff4d4d; }
         body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); display: flex; }
-        
-        /* SIDEBAR */
         .sidebar { width: 260px; background: var(--sidebar-bg); height: 100vh; position: fixed; border-right: 1px solid #30363d; display: flex; flex-direction: column; }
         .sidebar-logo { padding: 30px; text-align: center; }
         .sidebar-logo img { width: 60px; filter: drop-shadow(0 0 8px var(--primary)); }
-        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; }
         .nav-menu { padding: 10px 15px; flex-grow: 1; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; transition: 0.3s; margin-bottom: 5px; font-weight: 500; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; margin-bottom: 5px; }
         .nav-item:hover, .nav-item.active { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
-        .nav-item i { font-size: 18px; width: 25px; }
-        .sidebar-footer { padding: 20px; border-top: 1px solid #30363d; font-size: 12px; text-align: center; }
-
-        /* MAIN CONTENT */
         .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 40px; }
-        .page-header { margin-bottom: 30px; }
-        .page-header h1 { font-size: 24px; color: #fff; margin: 0; }
-
-        /* APPLICATION TABLE */
         .card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: rgba(255,255,255,0.02); padding: 15px; color: var(--text-muted); font-size: 13px; }
-        td { padding: 15px; border-top: 1px solid #30363d; font-size: 14px; }
-        
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(255,255,255,0.02); padding: 14px; color: var(--text-muted); font-size: 13px; text-align:left; }
+        td { padding: 14px; border-top: 1px solid #30363d; font-size: 14px; vertical-align: top; }
         .type-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: rgba(0, 210, 255, 0.1); color: var(--info); }
-        .btn-action { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 12px; }
-        .btn-approve { background: var(--primary); color: #000; margin-right: 5px; }
+        .btn-action { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; margin-top:6px; margin-right:4px; }
+        .btn-approve { background: var(--primary); color: #000; }
         .btn-reject { background: #30363d; color: #fff; }
+        .btn-detail { background: rgba(0,210,255,.15); color:#00d2ff; }
+        .reply-box { width: 100%; min-height: 64px; border-radius: 8px; background:#0b0e11; border:1px solid #30363d; color:#fff; padding:8px; }
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
-        <div class="sidebar-logo">
-            <img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo">
-            <h2>Atlas Admin</h2>
-        </div>
+        <div class="sidebar-logo"><img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo"><h2>Atlas Admin</h2></div>
         <nav class="nav-menu">
             <a href="hesaplar.html" class="nav-item"><i class="fa-solid fa-users"></i> Kullanıcı Yönetimi</a>
             <a href="urunler.html" class="nav-item"><i class="fa-solid fa-cart-shopping"></i> Mağaza Yönetimi</a>
             <a href="destek.html" class="nav-item"><i class="fa-solid fa-ticket"></i> Destek Sistemi</a>
             <a href="basvurular.html" class="nav-item active"><i class="fa-solid fa-file-signature"></i> Başvurular</a>
         </nav>
-        <div class="sidebar-footer">
-            <code style="color: var(--primary);">IP: 157.90.133.100</code>
-        </div>
     </aside>
 
     <main class="main-content">
-        <div class="page-header">
-            <h1>📝 Başvurular</h1>
-            <p style="color: var(--text-muted);">Yetkili ekibine katılmak isteyen adayları değerlendir.</p>
-        </div>
-
+        <h1>📝 Başvurular</h1>
+        <p style="color: var(--text-muted);">Başvuruları inceleyip admin cevabı yazabilir, onaylayabilir veya reddedebilirsin.</p>
         <div class="card">
             <table>
-                <thead>
-                    <tr>
-                        <th>Oyuncu Adı</th>
-                        <th>Başvuru Türü</th>
-                        <th>Yaş</th>
-                        <th>Tarih</th>
-                        <th>İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody id="applyBody">
-                    <tr><td colspan="5" style="color:#8b949e;">Başvurular yükleniyor...</td></tr>
-                </tbody>
+                <thead><tr><th>Oyuncu</th><th>Tür</th><th>Yaş</th><th>Tarih</th><th>Admin Cevabı</th><th>İşlem</th></tr></thead>
+                <tbody id="applyBody"><tr><td colspan="6" style="color:#8b949e;">Başvurular yükleniyor...</td></tr></tbody>
             </table>
         </div>
     </main>
 
-
 <script>
 const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
 
-function getApplyType(content) {
-  const line = String(content || '').split('\n').find(x => x.includes('YETKİ:'));
-  return line ? line.replace('YETKİ:', '').trim() : 'Başvuru';
-}
-
-function getApplyAge(content) {
-  const line = String(content || '').split('\n').find(x => x.includes('YAŞ:'));
-  return line ? line.replace('YAŞ:', '').trim() : '-';
+function getField(content, name) {
+  const line = String(content || '').split('\n').find(x => x.includes(`${name}:`));
+  return line ? line.replace(`${name}:`, '').trim() : '-';
 }
 
 async function setApplyStatus(id, status) {
   const res = await fetch(`${API}/api/update`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ table: 'applies', id, updates: { status } })
   });
   if (!res.ok) return alert(await res.text());
   await loadApplies();
+}
+
+async function saveApplyReply(id) {
+  const text = (document.getElementById(`reply-${id}`)?.value || '').trim();
+  const res = await fetch(`${API}/api/update`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'applies', id, updates: { adminReply: text } })
+  });
+  if (!res.ok) return alert(await res.text());
+  alert('Admin cevabı kaydedildi.');
+}
+
+function showApplyDetail(id) {
+  const row = document.getElementById(`content-${id}`);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
 }
 
 async function loadApplies() {
@@ -111,24 +91,30 @@ async function loadApplies() {
     const applies = data.applies || [];
 
     if (!applies.length) {
-      body.innerHTML = '<tr><td colspan="5" style="color:#8b949e;">Henüz başvuru yok.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" style="color:#8b949e;">Henüz başvuru yok.</td></tr>';
       return;
     }
 
     body.innerHTML = applies.map(a => `
       <tr>
         <td><strong>${a.user}</strong><br><small style="color:#8b949e">${a.status || 'Bekliyor'}</small></td>
-        <td><span class="type-badge">${getApplyType(a.content)}</span></td>
-        <td>${getApplyAge(a.content)}</td>
+        <td><span class="type-badge">${getField(a.content, 'YETKİ')}</span></td>
+        <td>${getField(a.content, 'YAŞ')}</td>
         <td>${a.date || '-'}</td>
+        <td style="min-width:250px;"><textarea class="reply-box" id="reply-${a.id}" placeholder="Başvuru cevabı...">${a.adminReply || ''}</textarea></td>
         <td>
+          <button class="btn-action btn-detail" onclick="showApplyDetail('${a.id}')">Detay</button>
+          <button class="btn-action btn-approve" onclick="saveApplyReply('${a.id}')">Cevap Kaydet</button>
           <button class="btn-action btn-approve" onclick="setApplyStatus('${a.id}','Onaylandı')">Onayla</button>
           <button class="btn-action btn-reject" onclick="setApplyStatus('${a.id}','Reddedildi')">Reddet</button>
         </td>
       </tr>
+      <tr id="content-${a.id}" style="display:none;">
+        <td colspan="6" style="white-space:pre-wrap; color:#b9c2cb; background:#11161d;">${a.content || '-'}</td>
+      </tr>
     `).join('');
   } catch {
-    body.innerHTML = '<tr><td colspan="5" style="color:#ff4d4d;">Başvurular yüklenemedi.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" style="color:#ff4d4d;">Başvurular yüklenemedi.</td></tr>';
   }
 }
 
