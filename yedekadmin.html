@@ -1708,6 +1708,16 @@
         return Array.isArray(val) ? val : [];
     }
 
+    function normalizeCategory(cat) {
+        if (typeof cat === 'string') return { id: cat, name: cat };
+        return { id: cat?.id || cat?.name || Date.now().toString(), name: cat?.name || 'Genel' };
+    }
+
+    function normalizeRole(role) {
+        if (typeof role === 'string') return { id: role, name: role, color: '#00d4aa', permissions: [] };
+        return { id: role?.id || role?.name || Date.now().toString(), name: role?.name || 'Oyuncu', color: role?.color || '#00d4aa', permissions: safeArray(role?.permissions) };
+    }
+
     function showSection(id, el) {
         document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
         const target = document.getElementById('sec-' + id) || document.getElementById(id);
@@ -1731,9 +1741,11 @@
             const res = await fetch(API + '/api/get-all');
             db = await res.json();
             db.users = safeArray(db.users);
-            db.roles = safeArray(db.roles);
-            db.categories = safeArray(db.categories);
+            db.roles = safeArray(db.roles).map(normalizeRole);
+            db.categories = safeArray(db.categories).map(normalizeCategory);
             db.products = safeArray(db.products);
+            db.tickets = safeArray(db.tickets);
+            db.applies = safeArray(db.applies);
             db.coupons = safeArray(db.coupons);
             db.orders = safeArray(db.orders);
             renderUsers();
@@ -1753,7 +1765,7 @@
     }
 
     function updateDropdowns() {
-        const pCat = document.getElementById('modalPCategory') || document.getElementById('pCategory');
+        const pCat = document.getElementById('modalPCategory');
         if (pCat) {
             pCat.innerHTML = '<option value="">Kategori Seç</option>' +
                 db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('\n');

@@ -63,6 +63,7 @@
 <script>
 const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
 let categoriesCache = [];
+const getCategoryName = (c) => (typeof c === 'string' ? c : (c?.name || ''));
 
 async function getAllData() {
   const res = await fetch(`${API}/api/get-all`);
@@ -80,14 +81,14 @@ async function loadCategories() {
     return;
   }
 
-  list.innerHTML = categoriesCache.map(c => `<span class="chip">${c.name || c}<button onclick="deleteCategory('${c.id}')" style="background:none;border:none;color:#ff4d4d;cursor:pointer;">✕</button></span>`).join('');
+  list.innerHTML = categoriesCache.map(c => `<span class="chip">${getCategoryName(c)}<button onclick="deleteCategory('${(typeof c === 'string' ? c : c.id)}')" style="background:none;border:none;color:#ff4d4d;cursor:pointer;">✕</button></span>`).join('');
 }
 
 async function addCategory() {
   const input = document.getElementById('newCategoryName');
   const name = input.value.trim();
   if (!name) return;
-  const exists = categoriesCache.some(c => (c.name || '').toLowerCase() === name.toLowerCase());
+  const exists = categoriesCache.some(c => getCategoryName(c).toLowerCase() === name.toLowerCase());
   if (exists) return alert('Bu kategori zaten mevcut.');
 
   const res = await fetch(`${API}/api/add`, {
@@ -139,7 +140,7 @@ async function loadProducts() {
 
 async function askCategory(defaultValue = '') {
   await loadCategories();
-  const options = ['Genel', ...categoriesCache.map(c => c.name)].filter((v, i, arr) => arr.indexOf(v) === i);
+  const options = ['Genel', ...categoriesCache.map(c => getCategoryName(c)).filter(Boolean)].filter((v, i, arr) => arr.indexOf(v) === i);
   const selected = prompt(`Kategori seçin:\n${options.join(', ')}`, defaultValue || options[0]);
   if (selected === null) return null;
   return selected.trim() || 'Genel';

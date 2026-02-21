@@ -169,7 +169,10 @@ export default {
         const list = await getT(table);
         await setT(
           table,
-          list.filter((x) => String(x.id) !== String(id))
+          list.filter((x) => {
+            if (x && typeof x === "object") return String(x.id) !== String(id) && String(x.name || "") !== String(id);
+            return String(x) !== String(id);
+          })
         );
         return textResponse("Silindi");
       }
