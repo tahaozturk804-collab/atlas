@@ -122,6 +122,7 @@
         <a href="index.html" class="logo">Atlas<span>Market</span></a>
         <div class="user-nav">
             <div class="balance-box" id="userBalance">Bakiye: 0₺</div>
+            <a href="sepet.html" class="topup-btn" id="cartBtn">Sepet (0)</a>
             <a href="profile.html" class="topup-btn">Profilim</a>
             <a href="index.html" style="color:white; text-decoration:none; font-size:14px;">← Geri</a>
         </div>
@@ -138,7 +139,26 @@
 <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     let db = { users: [], products: [], categories: [] };
-    let loggedInUser = localStorage.getItem('atlas_session');
+    const getSessionUser = () => decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
+    let loggedInUser = getSessionUser();
+
+    async function updateCartBadge() {
+        const btn = document.getElementById('cartBtn');
+        if (!btn) return;
+        try {
+            const res = await fetch(API + '/cart/get', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: loggedInUser })
+            });
+            if (!res.ok) throw new Error('cart fetch failed');
+            const data = await res.json();
+            const count = (data.items || []).reduce((sum, i) => sum + (Number(i.quantity) || 1), 0);
+            btn.textContent = `Sepet (${count})`;
+        } catch {
+            btn.textContent = 'Sepet (0)';
+        }
+    }
 
     async function loadMarket() {
         if (!loggedInUser) {
@@ -156,8 +176,9 @@
 
             renderCategories();
             renderProducts(db.products || []);
+            await updateCartBadge();
         } catch (e) {
-            document.getElementById('marketGrid').innerHTML = '<p style="text-align:center;color:#ff7675;">Market verisi alınamadı.</p>'
+            document.getElementById('marketGrid').innerHTML = '<p style="text-align:center;color:#ff7675;">Market verisi alınamadı.</p>';
             console.error("Market verisi çekilemedi.", e);
         }
     }
@@ -168,7 +189,7 @@
         const buttons = (db.categories || []).map(c =>
             `<button class="cat-btn" onclick="filterCategory('${c.name}')">${c.name}</button>`
         ).join('');
-        menu.innerHTML = '<button class="cat-btn active" onclick="filterCategory(\'Tümü\')">Tümü</button>' + buttons;
+        menu.innerHTML = "<button class='cat-btn active' onclick=\"filterCategory('Tümü')\">Tümü</button>" + buttons;
     }
 
     function renderProducts(list) {
@@ -183,7 +204,7 @@
                 <div class="product-img"><span>${p.image || '📦'}</span></div>
                 <h3>${p.name}</h3>
                 <div class="price">${p.price} ₺</div>
-                <button class="buy-btn" onclick="satinAl('${p.id}')">Satın Al</button>
+                <button class="buy-btn" onclick="sepeteEkle('${p.id}')">Sepete Ekle</button>
             </div>
         `).join('');
     }
@@ -193,20 +214,20 @@
         renderProducts(filtered);
     }
 
-    async function satinAl(productId) {
-        if (!loggedInUser) return;
+    async function sepeteEkle(productId) {
+        const product = (db.products || []).find(p => String(p.id) === String(productId));
+        if (!product) return alert('Ürün bulunamadı.');
 
-        const res = await fetch(API + '/buy-product', {
+        const res = await fetch(API + '/cart/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user: loggedInUser, productId })
+            body: JSON.stringify({ user: loggedInUser, productId, quantity: 1 })
         });
+        const text = await res.text();
+        if (!res.ok) return alert(text || 'Sepete ekleme başarısız.');
 
-        const msg = await res.text();
-        if (!res.ok) return alert(msg);
-
-        alert('Satın alma başarılı!');
-        await loadMarket();
+        await updateCartBadge();
+        alert(`${product.name} sepete eklendi.`);
     }
 
     window.onload = loadMarket;
