@@ -169,7 +169,14 @@ export default {
         const list = await getT(table);
         await setT(
           table,
+ codex/review-and-fix-files-with-new-features-dwkxej
+          list.filter((x) => {
+            if (x && typeof x === "object") return String(x.id) !== String(id) && String(x.name || "") !== String(id);
+            return String(x) !== String(id);
+          })
+
           list.filter((x) => String(x.id) !== String(id))
+ main
         );
         return textResponse("Silindi");
       }

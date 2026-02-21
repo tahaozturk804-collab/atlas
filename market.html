@@ -139,6 +139,7 @@
 <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     let db = { users: [], products: [], categories: [] };
+    const getCategoryName = (c) => (typeof c === 'string' ? c : (c?.name || ''));
     const getSessionUser = () => decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
     let loggedInUser = getSessionUser();
 
@@ -186,9 +187,7 @@
     function renderCategories() {
         const menu = document.getElementById('categoryMenu');
         if (!menu) return;
-        const buttons = (db.categories || []).map(c =>
-            `<button class="cat-btn" onclick="filterCategory('${c.name}')">${c.name}</button>`
-        ).join('');
+        const buttons = (db.categories || []).map(c => { const n = getCategoryName(c); return n ? `<button class="cat-btn" onclick="filterCategory('${n}')">${n}</button>` : ''; }).join('');
         menu.innerHTML = "<button class='cat-btn active' onclick=\"filterCategory('Tümü')\">Tümü</button>" + buttons;
     }
 
