@@ -74,6 +74,27 @@
             loadTickets();
         }
 
+        async function viewTicket(id) {
+    activeId = id;
+    const res = await fetch(`${API}/my-tickets`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) });
+    const t = (await res.json()).find(x => x.id === id);
+
+    document.getElementById('chatBox').innerHTML = t.messages.map(m => `
+        <div class="msg ${m.sender === 'Admin' ? 'admin' : 'user'}">
+            <div style="font-size:10px; opacity:0.5; margin-bottom:5px;">${m.sender}</div>
+            <div>${m.text}</div>
+        </div>
+    `).join('');
+
+    if(t.status === 'Kapandı') {
+        document.getElementById('closedOverlay').style.display = 'flex';
+        document.getElementById('replyArea').style.display = 'none';
+    }
+
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('ticketDetailView').style.display = 'block';
+    const cb = document.getElementById('chatBox'); cb.scrollTop = cb.scrollHeight;
+}
         loadTickets();
     </script>
 </body>
