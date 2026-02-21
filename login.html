@@ -133,7 +133,7 @@ document.getElementById('loginForm').onsubmit = async (e) => {
 
         if (response.ok) {
             // SADECE Worker "Giriş başarılı!" derse burası çalışır
-            localStorage.setItem('atlas_session', user);
+            sessionStorage.setItem('atlas_session', user);
             window.location.href = "index.html";
         } else {
             // Eğer kullanıcı yoksa (404) veya şifre yanlışsa (401) burası çalışır

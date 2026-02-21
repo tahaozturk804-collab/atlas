@@ -38,7 +38,7 @@ function sunucuDurumunuGuncelle() {
 
 // --- 2. WEB ÜZERİNDEN SÜRE TAKİBİ (Benim Eklediğim) ---
 async function webSureTakibi() {
-    const user = localStorage.getItem('atlas_session');
+    const user = sessionStorage.getItem('atlas_session');
     if (!user) return;
 
     // Her 60 saniyede bir Worker'a "ben buradayım" sinyali gönderir

@@ -41,7 +41,7 @@ document.getElementById('regForm').onsubmit = async (e) => {
 
         if (response.ok) {
             // Başarılıysa oturum aç ve ana sayfaya uçur
-            localStorage.setItem('atlas_session', user);
+            sessionStorage.setItem('atlas_session', user);
             window.location.href = "index.html";
         } else {
             // Worker'dan gelen hata mesajını göster (Örn: "Kullanıcı var")

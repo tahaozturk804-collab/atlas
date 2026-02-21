@@ -45,16 +45,10 @@
 
   <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
-    const user = localStorage.getItem('atlas_session');
-    const cartKey = () => `atlas_cart_${user || 'guest'}`;
+    const user = sessionStorage.getItem('atlas_session');
 
     let allData = { users: [], products: [] };
     let cart = [];
-
-    const readCart = () => {
-      try { return JSON.parse(localStorage.getItem(cartKey())) || []; } catch { return []; }
-    };
-    const writeCart = (items) => localStorage.setItem(cartKey(), JSON.stringify(items));
 
     async function load() {
       if (!user) {
@@ -62,9 +56,27 @@
         return;
       }
 
-      const res = await fetch(API + '/api/get-all');
-      allData = await res.json();
-      cart = readCart();
+      const [allRes, cartRes] = await Promise.all([
+        fetch(API + '/api/get-all'),
+        fetch(API + '/cart/get', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user })
+        })
+      ]);
+      allData = await allRes.json();
+      const cartData = await cartRes.json();
+      const productMap = new Map((allData.products || []).map(p => [String(p.id), p]));
+      cart = (cartData.items || []).map(i => {
+        const p = productMap.get(String(i.productId)) || {};
+        return {
+          productId: i.productId,
+          quantity: Number(i.quantity) || 1,
+          name: p.name || 'Silinmiş Ürün',
+          image: p.image || '📦',
+          price: Number(p.price) || 0
+        };
+      });
       render();
     }
 
@@ -73,10 +85,17 @@
       return { subtotal, total: subtotal };
     }
 
-    function removeFromCart(productId) {
-      cart = cart.filter(i => String(i.productId) !== String(productId));
-      writeCart(cart);
-      render();
+    async function removeFromCart(productId) {
+      const res = await fetch(API + '/cart/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, productId })
+      });
+      if (!res.ok) {
+        alert(await res.text());
+        return;
+      }
+      await load();
     }
 
     function render() {
@@ -113,8 +132,7 @@
       const couponCode = document.getElementById('couponInput').value.trim();
       const payload = {
         user,
-        couponCode: couponCode || null,
-        items: cart.map(i => ({ productId: i.productId, quantity: Number(i.quantity) || 1 }))
+        couponCode: couponCode || null
       };
 
       const res = await fetch(API + '/checkout-cart', {
@@ -129,7 +147,6 @@
       const data = JSON.parse(text);
       document.getElementById('discount').textContent = `${data.discount || 0} ₺`;
       document.getElementById('total').textContent = `${data.total || 0} ₺`;
-      writeCart([]);
       cart = [];
       alert('Ödeme başarılı!');
       await load();

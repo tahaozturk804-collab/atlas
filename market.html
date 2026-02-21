@@ -139,18 +139,24 @@
 <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     let db = { users: [], products: [], categories: [] };
-    let loggedInUser = localStorage.getItem('atlas_session');
+    let loggedInUser = sessionStorage.getItem('atlas_session');
 
-    const cartKey = () => `atlas_cart_${loggedInUser || 'guest'}`;
-    const readCart = () => {
-        try { return JSON.parse(localStorage.getItem(cartKey())) || []; } catch { return []; }
-    };
-    const writeCart = (items) => localStorage.setItem(cartKey(), JSON.stringify(items));
-
-    function updateCartBadge() {
-        const count = readCart().reduce((sum, i) => sum + (Number(i.quantity) || 1), 0);
+    async function updateCartBadge() {
         const btn = document.getElementById('cartBtn');
-        if (btn) btn.textContent = `Sepet (${count})`;
+        if (!btn) return;
+        try {
+            const res = await fetch(API + '/cart/get', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: loggedInUser })
+            });
+            if (!res.ok) throw new Error('cart fetch failed');
+            const data = await res.json();
+            const count = (data.items || []).reduce((sum, i) => sum + (Number(i.quantity) || 1), 0);
+            btn.textContent = `Sepet (${count})`;
+        } catch {
+            btn.textContent = 'Sepet (0)';
+        }
     }
 
     async function loadMarket() {
@@ -169,7 +175,7 @@
 
             renderCategories();
             renderProducts(db.products || []);
-            updateCartBadge();
+            await updateCartBadge();
         } catch (e) {
             document.getElementById('marketGrid').innerHTML = '<p style="text-align:center;color:#ff7675;">Market verisi alınamadı.</p>';
             console.error("Market verisi çekilemedi.", e);
@@ -207,26 +213,19 @@
         renderProducts(filtered);
     }
 
-    function sepeteEkle(productId) {
+    async function sepeteEkle(productId) {
         const product = (db.products || []).find(p => String(p.id) === String(productId));
-        if (!product) return;
+        if (!product) return alert('Ürün bulunamadı.');
 
-        const cart = readCart();
-        const existing = cart.find(i => String(i.productId) === String(productId));
-        if (existing) {
-            existing.quantity = (Number(existing.quantity) || 1) + 1;
-        } else {
-            cart.push({
-                productId: product.id,
-                name: product.name,
-                price: Number(product.price) || 0,
-                image: product.image || '📦',
-                quantity: 1
-            });
-        }
+        const res = await fetch(API + '/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: loggedInUser, productId, quantity: 1 })
+        });
+        const text = await res.text();
+        if (!res.ok) return alert(text || 'Sepete ekleme başarısız.');
 
-        writeCart(cart);
-        updateCartBadge();
+        await updateCartBadge();
         alert(`${product.name} sepete eklendi.`);
     }
 

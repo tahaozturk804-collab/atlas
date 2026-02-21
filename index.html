@@ -165,7 +165,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const loggedInUser = localStorage.getItem('atlas_session');
+            const loggedInUser = sessionStorage.getItem('atlas_session');
             if (loggedInUser) {
                 const authSection = document.getElementById('auth-buttons');
                 const menu = document.getElementById('navbar-menu');
@@ -180,7 +180,7 @@
         });
 
         function cikisYap() {
-            localStorage.removeItem('atlas_session');
+            sessionStorage.removeItem('atlas_session');
             window.location.reload();
         }
 

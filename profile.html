@@ -238,7 +238,7 @@
     const API_BASE = "https://atlasnetwork.tahaozturk804.workers.dev";
 
     async function loadData() {
-        const user = localStorage.getItem('atlas_session');
+        const user = sessionStorage.getItem('atlas_session');
         if (!user) { window.location.href = 'login.html'; return; }
 
         try {
@@ -268,7 +268,7 @@
     }
 
     async function updateSecurity(isPass) {
-        const user = localStorage.getItem('atlas_session');
+        const user = sessionStorage.getItem('atlas_session');
         const payload = { user };
 
         if(isPass) {
@@ -292,7 +292,7 @@
     }
 
     function logout() {
-        localStorage.removeItem('atlas_session');
+        sessionStorage.removeItem('atlas_session');
         window.location.href = 'login.html';
     }
 

@@ -75,7 +75,7 @@
 <script>
     document.getElementById('applyForm').onsubmit = async (e) => {
         e.preventDefault();
-        const user = localStorage.getItem('atlas_session');
+        const user = sessionStorage.getItem('atlas_session');
         if (!user) { alert("Önce giriş yapmalısın!"); return; }
 
         const btn = document.getElementById('submitBtn');

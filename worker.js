@@ -13,6 +13,7 @@ const DEFAULT_DB = {
   tickets: [],
   coupons: [],
   orders: [],
+  carts: {},
   online_sessions: {},
 };
 
@@ -312,8 +313,14 @@ export default {
 
       if (pathname === "/checkout-cart" && request.method === "POST") {
         const { user, items, couponCode } = await readJson(request);
-        if (!user || !Array.isArray(items) || items.length === 0) {
-          return textResponse("Kullanıcı ve sepet ürünleri zorunlu.", 400);
+        if (!user) {
+          return textResponse("Kullanıcı zorunlu.", 400);
+        }
+
+        const carts = await getTable(db, "carts");
+        const cartItems = Array.isArray(items) && items.length ? items : carts[user] || [];
+        if (!Array.isArray(cartItems) || cartItems.length === 0) {
+          return textResponse("Sepet boş.", 400);
         }
 
         const users = await getTable(db, "users");
@@ -327,7 +334,7 @@ export default {
         let subtotal = 0;
         const normalizedItems = [];
 
-        for (const item of items) {
+        for (const item of cartItems) {
           const quantity = Math.max(1, Number(item.quantity) || 1);
           const product = products.find((p) => String(p.id) === String(item.productId));
           if (!product) return textResponse("Sepette geçersiz ürün var.", 400);
@@ -389,6 +396,9 @@ export default {
         });
         await putTable(db, "orders", orders);
 
+        carts[user] = [];
+        await putTable(db, "carts", carts);
+
         return jsonResponse({
           success: true,
           bakiye: users[userIdx].bakiye,
@@ -397,6 +407,56 @@ export default {
           total,
           coupon: couponInfo,
         });
+      }
+
+      if (pathname === "/cart/get" && request.method === "POST") {
+        const { user } = await readJson(request);
+        if (!user) return textResponse("Kullanıcı zorunlu.", 400);
+        const carts = await getTable(db, "carts");
+        return jsonResponse({ items: carts[user] || [] });
+      }
+
+      if (pathname === "/cart/add" && request.method === "POST") {
+        const { user, productId, quantity } = await readJson(request);
+        if (!user || !productId) return textResponse("Kullanıcı ve ürün zorunlu.", 400);
+
+        const products = await getTable(db, "products");
+        const product = products.find((p) => String(p.id) === String(productId));
+        if (!product) return textResponse("Ürün bulunamadı.", 404);
+
+        const carts = await getTable(db, "carts");
+        const userCart = Array.isArray(carts[user]) ? carts[user] : [];
+        const idx = userCart.findIndex((i) => String(i.productId) === String(product.id));
+        const addQty = Math.max(1, Number(quantity) || 1);
+
+        if (idx === -1) {
+          userCart.push({ productId: product.id, quantity: addQty });
+        } else {
+          userCart[idx].quantity = (Number(userCart[idx].quantity) || 1) + addQty;
+        }
+
+        carts[user] = userCart;
+        await putTable(db, "carts", carts);
+        return jsonResponse({ success: true, items: userCart });
+      }
+
+      if (pathname === "/cart/remove" && request.method === "POST") {
+        const { user, productId } = await readJson(request);
+        if (!user || !productId) return textResponse("Kullanıcı ve ürün zorunlu.", 400);
+        const carts = await getTable(db, "carts");
+        const userCart = Array.isArray(carts[user]) ? carts[user] : [];
+        carts[user] = userCart.filter((i) => String(i.productId) !== String(productId));
+        await putTable(db, "carts", carts);
+        return jsonResponse({ success: true, items: carts[user] });
+      }
+
+      if (pathname === "/cart/clear" && request.method === "POST") {
+        const { user } = await readJson(request);
+        if (!user) return textResponse("Kullanıcı zorunlu.", 400);
+        const carts = await getTable(db, "carts");
+        carts[user] = [];
+        await putTable(db, "carts", carts);
+        return jsonResponse({ success: true });
       }
 
       if (pathname === "/buy-product" && request.method === "POST") {
