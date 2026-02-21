@@ -40,8 +40,8 @@ document.getElementById('regForm').onsubmit = async (e) => {
         const result = await response.text();
 
         if (response.ok) {
-            // Başarılıysa oturum aç ve ana sayfaya uçur
-            sessionStorage.setItem('atlas_session', user);
+            // Başarılıysa oturumu cookie'ye yaz
+            document.cookie = `atlas_session=${encodeURIComponent(user)}; path=/; max-age=86400; samesite=lax`;
             window.location.href = "index.html";
         } else {
             // Worker'dan gelen hata mesajını göster (Örn: "Kullanıcı var")

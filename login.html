@@ -132,8 +132,8 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         const result = await response.text();
 
         if (response.ok) {
-            // SADECE Worker "Giriş başarılı!" derse burası çalışır
-            sessionStorage.setItem('atlas_session', user);
+            // Oturumu cookie ile sakla (Cloudflare Worker akışı)
+            document.cookie = `atlas_session=${encodeURIComponent(user)}; path=/; max-age=86400; samesite=lax`;
             window.location.href = "index.html";
         } else {
             // Eğer kullanıcı yoksa (404) veya şifre yanlışsa (401) burası çalışır

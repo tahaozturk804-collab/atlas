@@ -75,7 +75,7 @@
 <script>
     document.getElementById('applyForm').onsubmit = async (e) => {
         e.preventDefault();
-        const user = sessionStorage.getItem('atlas_session');
+        const user = decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
         if (!user) { alert("Önce giriş yapmalısın!"); return; }
 
         const btn = document.getElementById('submitBtn');

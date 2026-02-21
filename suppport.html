@@ -170,7 +170,7 @@
 
 <script>
     const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
-    const user = sessionStorage.getItem('atlas_session');
+    const user = decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
     let activeId = null, base64Img = null;
 
     function showToast(m) {

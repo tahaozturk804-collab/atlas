@@ -139,7 +139,8 @@
 <script>
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     let db = { users: [], products: [], categories: [] };
-    let loggedInUser = sessionStorage.getItem('atlas_session');
+    const getSessionUser = () => decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
+    let loggedInUser = getSessionUser();
 
     async function updateCartBadge() {
         const btn = document.getElementById('cartBtn');

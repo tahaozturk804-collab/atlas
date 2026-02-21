@@ -164,8 +164,12 @@
     <script src="online.js"></script>
 
     <script>
+        function getSessionUser() {
+            return decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const loggedInUser = sessionStorage.getItem('atlas_session');
+            const loggedInUser = getSessionUser();
             if (loggedInUser) {
                 const authSection = document.getElementById('auth-buttons');
                 const menu = document.getElementById('navbar-menu');
@@ -180,7 +184,7 @@
         });
 
         function cikisYap() {
-            sessionStorage.removeItem('atlas_session');
+            document.cookie = 'atlas_session=; path=/; max-age=0; samesite=lax';
             window.location.reload();
         }
 
