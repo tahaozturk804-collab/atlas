@@ -1691,7 +1691,6 @@
 </div>
 
 <script>
-    // --- 1. AYARLAR VE GLOBAL DEĞİŞKENLER ---
     const API = "https://atlasnetwork.tahaozturk804.workers.dev";
     const ALL_PERMISSIONS = [
         "users.view", "users.edit", "users.ban", "users.credit",
@@ -1705,8 +1704,9 @@
     let db = { users: [], products: [], roles: [], categories: [], tickets: [], applies: [], coupons: [], orders: [] };
     let currentUser = null;
 
-    // --- 2. TEMEL ARAÇLAR ---
-    function safeArray(val) { return Array.isArray(val) ? val : []; }
+    function safeArray(val) {
+        return Array.isArray(val) ? val : [];
+    }
 
     function showSection(id, el) {
         document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
@@ -1726,32 +1726,31 @@
         return res;
     }
 
-    // --- 3. VERİ ÇEKME (DİNAMİK KATEGORİ BURADA ÇALIŞIR) ---
     async function fetchData() {
         try {
             const res = await fetch(API + '/api/get-all');
-            const data = await res.json();
-            
-            db.users = safeArray(data.users);
-            db.roles = safeArray(data.roles);
-            db.categories = safeArray(data.categories);
-            db.products = safeArray(data.products);
-            db.coupons = safeArray(data.coupons);
-            db.orders = safeArray(data.orders);
-            db.tickets = safeArray(data.tickets);
-            db.applies = safeArray(data.applies);
-
-            renderAll();
-            updateDropdowns(); // Kategorileri dropdown'a çeker
+            db = await res.json();
+            db.users = safeArray(db.users);
+            db.roles = safeArray(db.roles);
+            db.categories = safeArray(db.categories);
+            db.products = safeArray(db.products);
+            db.coupons = safeArray(db.coupons);
+            db.orders = safeArray(db.orders);
+            renderUsers();
+            renderRoles();
+            renderPermissionsTable();
+            renderProducts();
+            renderCategories();
+            renderCoupons();
+            updateDropdowns();
+            buildPermissionsGrid();
         } catch (e) {
-            console.error("Veri yüklenemedi:", e);
+            console.error("Veri hatası:", e);
         }
     }
 
-    // --- 4. DROPDOWN GÜNCELLEME (ÜRÜN EKLEME KATEGORİLERİ) ---
     function updateDropdowns() {
-        // Ürün ekleme modalındaki kategori seçimi (HTML'deki ID'ye göre hem 'productCategory' hem 'modalPCategory' kontrol edilir)
-        const pCat = document.getElementById('productCategory') || document.getElementById('modalPCategory');
+        const pCat = document.getElementById('pCategory');
         if (pCat) {
             pCat.innerHTML = '<option value="">Kategori Seç</option>' +
                 db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -1764,25 +1763,56 @@
         }
     }
 
-    // --- 5. RENDERLAR (TABLOLAR) ---
-    function renderAll() {
-        renderUsers();
-        renderRoles();
-        renderProducts();
-        renderCategories();
-        renderCoupons();
-        renderApplies(); // Başvurular
-        renderTickets(); // Destek Talepleri
-        if(typeof buildPermissionsGrid === "function") buildPermissionsGrid();
+    function buildPermissionsGrid(selectedPermissions = []) {
+        const grid = document.getElementById('permissionsGrid');
+        if (!grid) return;
 
-        // Dashboard sayacı
-        if(document.getElementById('stat-users')) document.getElementById('stat-users').innerText = db.users.length;
-        if(document.getElementById('stat-tickets')) document.getElementById('stat-tickets').innerText = db.tickets.filter(t => t.status !== 'Kapandı').length;
+        grid.innerHTML = ALL_PERMISSIONS.map(permission => `
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); cursor:pointer;">
+                <input type="checkbox" class="perm-checkbox" value="${permission}" ${selectedPermissions.includes(permission) ? 'checked' : ''}>
+                ${permission}
+            </label>
+        `).join('');
+    }
+
+    function selectedPermissions() {
+        return Array.from(document.querySelectorAll('.perm-checkbox:checked')).map(el => el.value);
+    }
+
+    async function addRole() {
+        const name = document.getElementById('roleName')?.value.trim();
+        const color = document.getElementById('roleColor')?.value || '#00d4aa';
+        const permissions = selectedPermissions();
+
+        if (!name) {
+            alert('Rol adı zorunlu.');
+            return;
+        }
+
+        const exists = db.roles.some(r => (r.name || '').toLowerCase() === name.toLowerCase());
+        if (exists) {
+            alert('Bu rol zaten var.');
+            return;
+        }
+
+        try {
+            await post('/api/add', {
+                table: 'roles',
+                data: { id: Date.now().toString(), name, color, permissions }
+            });
+            closeModal('roleModal');
+            document.getElementById('roleName').value = '';
+            buildPermissionsGrid();
+            await fetchData();
+        } catch (e) {
+            alert('Rol eklenemedi: ' + e.message);
+        }
     }
 
     function renderUsers() {
         const list = document.getElementById("usersList");
         if (!list) return;
+
         list.innerHTML = db.users.map(u => `
             <tr>
                 <td>${u.username || '-'}</td>
@@ -1794,16 +1824,58 @@
         `).join('') || '<tr><td colspan="5">Kullanıcı yok.</td></tr>';
     }
 
+    function renderRoles() {
+        const list = document.getElementById('rolesList');
+        if (!list) return;
+
+        list.innerHTML = db.roles.map(role => {
+            const roleUsers = db.users.filter(u => u.role === role.name).length;
+            return `
+                <tr>
+                    <td>${role.name || '-'}</td>
+                    <td><span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:50%;display:inline-block;background:${role.color || '#00d4aa'}"></span>${role.color || '#00d4aa'}</span></td>
+                    <td>${roleUsers}</td>
+                    <td><span class="badge badge-user">${safeArray(role.permissions).length} izin</span></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4">Rol bulunamadı.</td></tr>';
+    }
+
+    function renderPermissionsTable() {
+        const tbody = document.getElementById('permissionsList');
+        if (!tbody) return;
+
+        const rows = db.users
+            .filter(user => user.role && user.role !== 'Oyuncu')
+            .map(user => {
+                const role = db.roles.find(r => r.name === user.role);
+                const perms = safeArray(role?.permissions);
+                return `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.role}</td>
+                        <td>${perms.length ? perms.join(', ') : 'Tanımlı izin yok'}</td>
+                        <td><span class="badge badge-warning">Yetkili</span></td>
+                    </tr>
+                `;
+            });
+
+        tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Yetkili kullanıcı bulunamadı.</td></tr>';
+    }
+
     function renderProducts() {
         const tbody = document.getElementById('productsList');
         if (!tbody) return;
+
         tbody.innerHTML = db.products.map(p => `
             <tr>
                 <td>${p.name || '-'}</td>
                 <td>${p.category || 'Genel'}</td>
                 <td>₺${Number(p.price || 0)}</td>
                 <td>${p.stock ?? 'Sınırsız'}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteRow('products','${p.id}')">Sil</button></td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRow('products','${p.id}')">Sil</button>
+                </td>
             </tr>
         `).join('') || '<tr><td colspan="5">Ürün bulunamadı.</td></tr>';
     }
@@ -1811,76 +1883,60 @@
     function renderCategories() {
         const tbody = document.getElementById('categoriesList');
         if (!tbody) return;
-        tbody.innerHTML = db.categories.map(c => `
-            <tr>
-                <td>${c.name}</td>
-                <td>${db.products.filter(p => p.category === c.name).length}</td>
-                <td><span class="badge badge-success">Aktif</span></td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteRow('categories','${c.id}')">Sil</button></td>
-            </tr>
-        `).join('') || '<tr><td colspan="4">Kategori yok.</td></tr>';
+
+        tbody.innerHTML = db.categories.map(c => {
+            const count = db.products.filter(p => p.category === c.name).length;
+            return `
+                <tr>
+                    <td>${c.name}</td>
+                    <td>${count}</td>
+                    <td><span class="badge badge-success">Aktif</span></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteRow('categories','${c.id}')">Sil</button></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4">Kategori bulunamadı.</td></tr>';
     }
 
-    function renderApplies() {
-        const tbody = document.getElementById('applicationsList');
+    function renderCoupons() {
+        const tbody = document.getElementById('couponsList');
         if (!tbody) return;
-        tbody.innerHTML = db.applies.map(a => `
-            <tr>
-                <td>#${a.id.slice(0,5)}</td>
-                <td>${a.user}</td>
-                <td><button class="btn btn-secondary btn-sm" onclick="alert('BAŞVURU İÇERİĞİ:\\n\\n' + '${a.content.replace(/\n/g, '\\n')}')">Gör</button></td>
-                <td><span class="badge ${a.status === 'Onaylandı' ? 'badge-success' : a.status === 'Reddedildi' ? 'badge-danger' : 'badge-warning'}">${a.status || 'Beklemede'}</span></td>
-                <td>${a.date || '-'}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="updateApplyStatus('${a.id}', 'Onaylandı')">✅</button>
-                    <button class="btn btn-danger btn-sm" onclick="updateApplyStatus('${a.id}', 'Reddedildi')">❌</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="6">Başvuru yok.</td></tr>';
+
+        tbody.innerHTML = db.coupons.map(c => {
+            const used = Number(c.usedCount || 0);
+            const limit = Number(c.limit || 0);
+            return `
+                <tr>
+                    <td>${c.code}</td>
+                    <td>%${Number(c.discount || 0)}</td>
+                    <td>${used}/${limit || '∞'}</td>
+                    <td>${c.expiry || '-'}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteRow('coupons','${c.id}')">Sil</button></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="5">Kupon bulunamadı.</td></tr>';
     }
 
-    function renderTickets() {
-        const list = document.getElementById("ticketsList");
-        if (!list) return;
-        list.innerHTML = db.tickets.map(t => `
-            <tr>
-                <td>#${t.id.slice(0,5)}</td>
-                <td>${t.user}</td>
-                <td>${t.title}</td>
-                <td>${t.category}</td>
-                <td><span class="badge ${t.status === 'Kapandı' ? 'badge-danger' : 'badge-success'}">${t.status}</span></td>
-                <td><button class="btn btn-primary btn-sm" onclick="adminViewTicket('${t.id}')">Yanıtla</button></td>
-            </tr>
-        `).join('') || '<tr><td colspan="6">Talep yok.</td></tr>';
-    }
-
-    // --- 6. İŞLEMLER (BAŞVURU & DESTEK & ÜRÜN) ---
-    async function updateApplyStatus(id, status) {
-        if(!confirm(`Bu başvuruyu ${status} yapıyorsunuz?`)) return;
-        await post('/api/update', { table: 'applies', id, updates: { status } });
-        fetchData();
-    }
-
-    function adminViewTicket(id) {
-        const ticket = db.tickets.find(t => t.id === id);
-        const reply = prompt(`${ticket.user} Mesajı:\n"${ticket.messages[ticket.messages.length-1].text}"\n\nYanıtınız:`);
-        if(reply) {
-            post('/reply-ticket', { ticketId: id, sender: 'Admin', text: reply }).then(() => fetchData());
-        }
+    async function deleteRow(table, id) {
+        if (!id) return;
+        await post('/api/delete', { table, id });
+        await fetchData();
     }
 
     async function addProduct() {
-        const name = document.getElementById('productName')?.value || document.getElementById('modalPName')?.value;
-        const price = document.getElementById('productPrice')?.value || document.getElementById('modalPPrice')?.value;
-        const category = document.getElementById('productCategory')?.value || document.getElementById('modalPCategory')?.value;
-        const image = document.getElementById('pImage')?.value || "📦";
+        const modal = document.getElementById('productModal');
+        if (!modal) return;
+        const name = modal.querySelector('#pName')?.value.trim();
+        const price = modal.querySelector('#pPrice')?.value.trim();
+        const category = modal.querySelector('#pCategory')?.value;
+        const image = modal.querySelector('#pImage')?.value || "📦";
 
-        if (!name || !price) return alert("Ad ve Fiyat zorunlu!");
+        if (!name || !price) return;
 
         await post('/api/add', {
             table: 'products',
             data: { id: Date.now().toString(), name, price: Number(price), category, image }
         });
+
         closeModal('productModal');
         fetchData();
     }
@@ -1895,17 +1951,12 @@
         fetchData();
     }
 
-    async function deleteRow(table, id) {
-        if (!confirm("Emin misiniz?")) return;
-        await post('/api/delete', { table, id });
-        fetchData();
-    }
-
     function editUser(username) {
         currentUser = username;
         const user = db.users.find(u => u.username === username);
         if (!user) return;
-        if(document.getElementById('seciliKullanici')) document.getElementById('seciliKullanici').innerText = username;
+
+        document.getElementById('seciliKullanici').innerText = username;
         document.getElementById('editBakiye').value = user.bakiye || 0;
         document.getElementById('editRole').value = user.role || "Oyuncu";
         openModal('userModal');
@@ -1914,21 +1965,240 @@
     async function saveUser() {
         const bakiye = document.getElementById('editBakiye').value;
         const role = document.getElementById('editRole').value;
-        await post('/api/users/update', { user: currentUser, type: 'fullUpdate', val: { bakiye: Number(bakiye), role } });
+        await post('/api/users/update', {
+            user: currentUser,
+            type: 'fullUpdate',
+            val: { bakiye: Number(bakiye), role }
+        });
         closeModal('userModal');
         fetchData();
     }
 
-    function openModal(id) { 
-        const el = document.getElementById(id); 
-        if(el) el.style.display = 'flex'; 
-    }
-    function closeModal(id) { 
-        const el = document.getElementById(id); 
-        if(el) el.style.display = 'none'; 
+    async function sendCredit() {
+        if (!currentUser) return;
+        const add = Number(document.getElementById('creditAmount')?.value || 0);
+        const user = db.users.find(u => u.username === currentUser);
+        if (!user || !add) return;
+        await post('/api/users/update', {
+            user: currentUser,
+            type: 'bakiye',
+            val: Number(user.bakiye || 0) + add
+        });
+        document.getElementById('creditAmount').value = '';
+        fetchData();
     }
 
-    // --- 7. SAYFA BAŞLATMA ---
+    async function banUser() {
+        if (!currentUser) return;
+        const user = db.users.find(u => u.username === currentUser);
+        if (!user) return;
+        await post('/api/users/update', {
+            user: currentUser,
+            type: 'fullUpdate',
+            val: { ...user, status: 'banned' }
+        });
+        closeModal('userModal');
+        fetchData();
+    }
+
+    function filterTable(tableId, query) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const q = (query || '').toLowerCase();
+        table.querySelectorAll('tbody tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    function openModal(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'roleModal') buildPermissionsGrid();
+        el.style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+
+    function notReady(feature) {
+        console.warn(`${feature} henüz bu sürümde aktif değil.`);
+    }
+
+    async function addCoupon() {
+        const code = document.getElementById('couponCode')?.value.trim().toUpperCase();
+        const discount = Number(document.getElementById('couponDiscount')?.value || 0);
+        const limit = Number(document.getElementById('couponLimit')?.value || 0);
+        const expiry = document.getElementById('couponExpiry')?.value || null;
+
+        if (!code || !discount) {
+            alert('Kupon kodu ve indirim zorunlu.');
+            return;
+        }
+
+        await post('/api/add', {
+            table: 'coupons',
+            data: { id: Date.now().toString(), code, discount, limit, expiry, usedCount: 0 }
+        });
+
+        document.getElementById('couponCode').value = '';
+        document.getElementById('couponDiscount').value = '';
+        closeModal('couponModal');
+        await fetchData();
+    }
+    const applyBulkDiscount = () => notReady('Toplu indirim');
+    const refreshLogs = () => notReady('Log yenileme');
+    const saveSettings = () => notReady('Ayar kaydetme');
+
+    // --- AYARLAR VE GLOBAL DEĞİŞKENLER ---
+const API = "https://atlasnetwork.tahaozturk804.workers.dev";
+let db = { users: [], products: [], roles: [], categories: [], tickets: [], applies: [], coupons: [], orders: [] };
+let currentUser = null;
+let activeTicketId = null;
+
+// --- VERİ ÇEKME VE YENİLEME ---
+async function fetchData() {
+    try {
+        const res = await fetch(API + '/api/get-all');
+        db = await res.json();
+        
+        // Verileri Tablolara Bas
+        renderUsers();
+        renderRoles();
+        renderProducts();
+        renderCategories();
+        renderCoupons();
+        renderApplies(); // Başvurular
+        renderTickets(); // Destek Talepleri
+        
+        // Dropdown'ları (Kategoriler dahil) Güncelle
+        updateDropdowns();
+        
+        // İstatistikleri Güncelle
+        document.getElementById('stat-users').innerText = db.users.length;
+        document.getElementById('stat-tickets').innerText = db.tickets.filter(t => t.status !== 'Kapandı').length;
+    } catch (e) {
+        console.error("Veri yükleme hatası:", e);
+    }
+}
+
+// --- DİNAMİK KATEGORİ LİSTESİ ---
+function updateDropdowns() {
+    const pCat = document.getElementById('modalPCategory'); // Ürün modalındaki select
+    if (pCat && db.categories) {
+        pCat.innerHTML = '<option value="">Kategori Seçin</option>' +
+            db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+}
+
+// --- BAŞVURU YÖNETİMİ (APPLIES) ---
+function renderApplies() {
+    const list = document.getElementById("applicationsList");
+    if (!list) return;
+
+    list.innerHTML = db.applies.map(a => `
+        <tr>
+            <td>#${a.id.slice(-4)}</td>
+            <td>${a.user}</td>
+            <td><button class="btn btn-secondary btn-sm" onclick="viewApply('${a.id}')">İçeriği Gör</button></td>
+            <td><span class="badge ${a.status === 'Onaylandı' ? 'badge-success' : a.status === 'Reddedildi' ? 'badge-danger' : 'badge-warning'}">${a.status || 'Beklemede'}</span></td>
+            <td>${a.date || '-'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-primary btn-sm" onclick="updateApplyStatus('${a.id}', 'Onaylandı')"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="updateApplyStatus('${a.id}', 'Reddedildi')"><i class="fas fa-times"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6">Başvuru bulunamadı.</td></tr>';
+}
+
+async function updateApplyStatus(id, status) {
+    if(!confirm(`Bu başvuruyu ${status} olarak işaretlemek istediğine emin misin?`)) return;
+    await post('/api/update-apply', { id, status });
+    fetchData();
+}
+
+function viewApply(id) {
+    const apply = db.applies.find(a => a.id === id);
+    alert(`BAŞVURU DETAYI:\n\n${apply.content}`);
+}
+
+// --- DESTEK TALEBİ YÖNETİMİ (TICKETS) ---
+function renderTickets() {
+    const list = document.getElementById("ticketsList");
+    if (!list) return;
+
+    list.innerHTML = db.tickets.map(t => `
+        <tr>
+            <td>#${t.id.slice(-4)}</td>
+            <td>${t.user}</td>
+            <td>${t.title}</td>
+            <td>${t.category}</td>
+            <td><span class="badge ${t.status === 'Kapandı' ? 'badge-danger' : 'badge-success'}">${t.status}</span></td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="adminViewTicket('${t.id}')">Yanıtla</button>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6">Talep bulunamadı.</td></tr>';
+}
+
+function adminViewTicket(id) {
+    activeTicketId = id;
+    const ticket = db.tickets.find(t => t.id === id);
+    const msgHtml = ticket.messages.map(m => `
+        <div style="margin-bottom:10px; padding:10px; border-radius:10px; background:${m.sender === 'Admin' ? 'rgba(0,212,170,0.1)' : 'rgba(255,255,255,0.05)'}">
+            <b style="color:var(--primary)">${m.sender}:</b> ${m.text}
+        </div>
+    `).join('');
+    
+    // Basit bir Prompt/Modal simülasyonu (Bunu özel modala çevirebilirsin)
+    const reply = prompt(`${ticket.user} kullanıcısının talebi:\n\n${msgHtml.replace(/<[^>]*>/g, '')}\n\nYanıtınız:`);
+    if(reply) {
+        sendAdminReply(id, reply);
+    }
+}
+
+async function sendAdminReply(ticketId, text) {
+    await post('/reply-ticket', { ticketId, sender: 'Admin', text, isAdmin: true });
+    alert("Yanıt gönderildi!");
+    fetchData();
+}
+
+// --- ÜRÜN EKLEME FONKSİYONU ---
+async function addProduct() {
+    const name = document.getElementById('modalPName').value;
+    const price = document.getElementById('modalPPrice').value;
+    const category = document.getElementById('modalPCategory').value;
+    const emoji = document.getElementById('pImage').value;
+
+    if(!name || !price || !category) return alert("Lütfen tüm alanları doldurun!");
+
+    await post('/api/add', {
+        table: 'products',
+        data: { id: Date.now().toString(), name, price: Number(price), category, image: emoji || "📦" }
+    });
+
+    closeModal('productModal');
+    fetchData();
+}
+
+// Yardımcı Fonksiyon: API POST
+async function post(path, data) {
+    const res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return res.json();
+}
+
+// Sayfa yüklendiğinde verileri çek
+window.onload = () => {
+    fetchData();
+    showSection('dashboard', document.querySelector('.nav-item'));
+};
     window.onload = () => {
         fetchData();
         showSection('dashboard', document.querySelector('.nav-item.active'));
@@ -1936,3 +2206,4 @@
 </script>
 </body>
 </html>
+
