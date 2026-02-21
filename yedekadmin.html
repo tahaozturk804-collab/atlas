@@ -1742,6 +1742,9 @@
             renderProducts();
             renderCategories();
             renderCoupons();
+            renderApplies();
+            renderTickets();
+            renderTicketCategories();
             updateDropdowns();
             buildPermissionsGrid();
         } catch (e) {
@@ -1966,6 +1969,27 @@ ${apply.content || '-'}`);
                 <td><button class="btn btn-primary btn-sm" onclick="replyTicket('${t.id}')">Yanıtla</button></td>
             </tr>
         `).join('') || '<tr><td colspan="6">Talep bulunamadı.</td></tr>';
+    }
+
+    function renderTicketCategories() {
+        const tbody = document.getElementById('ticketCategoriesList');
+        if (!tbody) return;
+
+        const tickets = safeArray(db.tickets);
+        const map = new Map();
+        tickets.forEach(t => {
+            const key = (t.category || 'Genel').trim() || 'Genel';
+            map.set(key, (map.get(key) || 0) + 1);
+        });
+
+        const rows = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+        tbody.innerHTML = rows.map(([name, count]) => `
+            <tr>
+                <td>${name}</td>
+                <td>${count}</td>
+                <td><span class="badge badge-success">Aktif</span></td>
+            </tr>
+        `).join('') || '<tr><td colspan="3">Kategori bulunamadı.</td></tr>';
     }
 
     async function replyTicket(id) {
