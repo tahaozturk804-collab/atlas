@@ -143,6 +143,7 @@
             <a href="suppport.html">Destek</a>
             <a href="profile.html">Profil</a>
             <a href="market.html">Market</a>
+            <a href="sepet.html">Sepet</a>
             <div id="auth-buttons" style="display: flex;">
                 <a href="login.html">Giriş Yap</a>
                 <a href="register.html" class="market-btn">Kayıt Ol</a>
@@ -163,8 +164,12 @@
     <script src="online.js"></script>
 
     <script>
+        function getSessionUser() {
+            return decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const loggedInUser = localStorage.getItem('atlas_session');
+            const loggedInUser = getSessionUser();
             if (loggedInUser) {
                 const authSection = document.getElementById('auth-buttons');
                 const menu = document.getElementById('navbar-menu');
@@ -179,7 +184,7 @@
         });
 
         function cikisYap() {
-            localStorage.removeItem('atlas_session');
+            document.cookie = 'atlas_session=; path=/; max-age=0; samesite=lax';
             window.location.reload();
         }
 
