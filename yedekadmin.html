@@ -1675,9 +1675,15 @@
 <div id="productModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:9999;">
     <div class="modal-content" style="background:#161b22; padding:30px; border-radius:15px; width:400px; border:1px solid #30363d;">
         <h3 style="color:#00d4aa; margin-bottom:15px;">Yeni Ürün Ekle</h3>
+ codex/review-and-fix-files-with-new-features-dwkxej
 <input type="text" id="modalPName" placeholder="Ürün Adı" style="width:100%; padding:10px; margin-bottom:15px; background:#0d1117; border:1px solid #30363d; color:white; border-radius:5px;">
 <input type="number" id="modalPPrice" placeholder="Fiyat (₺)" style="width:100%; padding:10px; margin-bottom:15px; background:#0d1117; border:1px solid #30363d; color:white; border-radius:5px;">
 <select id="modalPCategory" style="width:100%; padding:10px; margin-bottom:15px; background:#0d1117; border:1px solid #30363d; color:white; border-radius:5px;">
+
+<input type="text" id="modalPName" placeholder="Ürün Adı" ...>
+<input type="number" id="modalPPrice" placeholder="Fiyat (₺)" ...>
+<select id="modalPCategory" ...>
+ main
     <option value="">Kategori Seç</option>
 </select>
 
@@ -1708,6 +1714,7 @@
         return Array.isArray(val) ? val : [];
     }
 
+ codex/review-and-fix-files-with-new-features-dwkxej
     function normalizeCategory(cat) {
         if (typeof cat === 'string') return { id: cat, name: cat };
         return { id: cat?.id || cat?.name || Date.now().toString(), name: cat?.name || 'Genel' };
@@ -1718,6 +1725,7 @@
         return { id: role?.id || role?.name || Date.now().toString(), name: role?.name || 'Oyuncu', color: role?.color || '#00d4aa', permissions: safeArray(role?.permissions) };
     }
 
+ main
     function showSection(id, el) {
         document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
         const target = document.getElementById('sec-' + id) || document.getElementById(id);
@@ -1741,11 +1749,17 @@
             const res = await fetch(API + '/api/get-all');
             db = await res.json();
             db.users = safeArray(db.users);
+ codex/review-and-fix-files-with-new-features-dwkxej
             db.roles = safeArray(db.roles).map(normalizeRole);
             db.categories = safeArray(db.categories).map(normalizeCategory);
             db.products = safeArray(db.products);
             db.tickets = safeArray(db.tickets);
             db.applies = safeArray(db.applies);
+
+            db.roles = safeArray(db.roles);
+            db.categories = safeArray(db.categories);
+            db.products = safeArray(db.products);
+ main
             db.coupons = safeArray(db.coupons);
             db.orders = safeArray(db.orders);
             renderUsers();
@@ -1754,9 +1768,11 @@
             renderProducts();
             renderCategories();
             renderCoupons();
+ codex/review-and-fix-files-with-new-features-dwkxej
             renderApplies();
             renderTickets();
             renderTicketCategories();
+ main
             updateDropdowns();
             buildPermissionsGrid();
         } catch (e) {
@@ -1765,16 +1781,27 @@
     }
 
     function updateDropdowns() {
+ codex/review-and-fix-files-with-new-features-dwkxej
         const pCat = document.getElementById('modalPCategory');
         if (pCat) {
             pCat.innerHTML = '<option value="">Kategori Seç</option>' +
                 db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('\n');
+
+        const pCat = document.getElementById('pCategory');
+        if (pCat) {
+            pCat.innerHTML = '<option value="">Kategori Seç</option>' +
+                db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+main
         }
 
         const eRole = document.getElementById('editRole');
         if (eRole) {
             const roleOptions = db.roles.length ? db.roles : [{ name: 'Oyuncu' }];
+codex/review-and-fix-files-with-new-features-dwkxej
             eRole.innerHTML = roleOptions.map(r => `<option value="${r.name}">${r.name}</option>`).join('\n');
+
+            eRole.innerHTML = roleOptions.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+main
         }
     }
 
@@ -1787,7 +1814,11 @@
                 <input type="checkbox" class="perm-checkbox" value="${permission}" ${selectedPermissions.includes(permission) ? 'checked' : ''}>
                 ${permission}
             </label>
+ codex/review-and-fix-files-with-new-features-dwkxej
         `).join('\n');
+
+        `).join('');
+ main
     }
 
     function selectedPermissions() {
@@ -1931,6 +1962,7 @@
         }).join('') || '<tr><td colspan="5">Kupon bulunamadı.</td></tr>';
     }
 
+codex/review-and-fix-files-with-new-features-dwkxej
 
     function renderApplies() {
         const tbody = document.getElementById('applicationsList');
@@ -2024,6 +2056,8 @@ Admin cevabı:`);
         await fetchData();
     }
 
+
+ main
     async function deleteRow(table, id) {
         if (!id) return;
         await post('/api/delete', { table, id });
@@ -2033,6 +2067,7 @@ Admin cevabı:`);
     async function addProduct() {
         const modal = document.getElementById('productModal');
         if (!modal) return;
+ codex/review-and-fix-files-with-new-features-dwkxej
         const name = modal.querySelector('#modalPName')?.value.trim();
         const price = modal.querySelector('#modalPPrice')?.value.trim();
         const category = modal.querySelector('#modalPCategory')?.value;
@@ -2043,16 +2078,29 @@ Admin cevabı:`);
             return;
         }
 
+        const name = modal.querySelector('#pName')?.value.trim();
+        const price = modal.querySelector('#pPrice')?.value.trim();
+        const category = modal.querySelector('#pCategory')?.value;
+        const image = modal.querySelector('#pImage')?.value || "📦";
+
+        if (!name || !price) return;
+ main
+
         await post('/api/add', {
             table: 'products',
             data: { id: Date.now().toString(), name, price: Number(price), category, image }
         });
 
+ codex/review-and-fix-files-with-new-features-dwkxej
         modal.querySelector('#modalPName').value = '';
         modal.querySelector('#modalPPrice').value = '';
         modal.querySelector('#pImage').value = '';
         closeModal('productModal');
         await fetchData();
+
+        closeModal('productModal');
+        fetchData();
+ main
     }
 
     async function addCategory() {
