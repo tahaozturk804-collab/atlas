@@ -2051,6 +2051,154 @@
     const refreshLogs = () => notReady('Log yenileme');
     const saveSettings = () => notReady('Ayar kaydetme');
 
+    // --- AYARLAR VE GLOBAL DEĞİŞKENLER ---
+const API = "https://atlasnetwork.tahaozturk804.workers.dev";
+let db = { users: [], products: [], roles: [], categories: [], tickets: [], applies: [], coupons: [], orders: [] };
+let currentUser = null;
+let activeTicketId = null;
+
+// --- VERİ ÇEKME VE YENİLEME ---
+async function fetchData() {
+    try {
+        const res = await fetch(API + '/api/get-all');
+        db = await res.json();
+        
+        // Verileri Tablolara Bas
+        renderUsers();
+        renderRoles();
+        renderProducts();
+        renderCategories();
+        renderCoupons();
+        renderApplies(); // Başvurular
+        renderTickets(); // Destek Talepleri
+        
+        // Dropdown'ları (Kategoriler dahil) Güncelle
+        updateDropdowns();
+        
+        // İstatistikleri Güncelle
+        document.getElementById('stat-users').innerText = db.users.length;
+        document.getElementById('stat-tickets').innerText = db.tickets.filter(t => t.status !== 'Kapandı').length;
+    } catch (e) {
+        console.error("Veri yükleme hatası:", e);
+    }
+}
+
+// --- DİNAMİK KATEGORİ LİSTESİ ---
+function updateDropdowns() {
+    const pCat = document.getElementById('modalPCategory'); // Ürün modalındaki select
+    if (pCat && db.categories) {
+        pCat.innerHTML = '<option value="">Kategori Seçin</option>' +
+            db.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+}
+
+// --- BAŞVURU YÖNETİMİ (APPLIES) ---
+function renderApplies() {
+    const list = document.getElementById("applicationsList");
+    if (!list) return;
+
+    list.innerHTML = db.applies.map(a => `
+        <tr>
+            <td>#${a.id.slice(-4)}</td>
+            <td>${a.user}</td>
+            <td><button class="btn btn-secondary btn-sm" onclick="viewApply('${a.id}')">İçeriği Gör</button></td>
+            <td><span class="badge ${a.status === 'Onaylandı' ? 'badge-success' : a.status === 'Reddedildi' ? 'badge-danger' : 'badge-warning'}">${a.status || 'Beklemede'}</span></td>
+            <td>${a.date || '-'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-primary btn-sm" onclick="updateApplyStatus('${a.id}', 'Onaylandı')"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="updateApplyStatus('${a.id}', 'Reddedildi')"><i class="fas fa-times"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6">Başvuru bulunamadı.</td></tr>';
+}
+
+async function updateApplyStatus(id, status) {
+    if(!confirm(`Bu başvuruyu ${status} olarak işaretlemek istediğine emin misin?`)) return;
+    await post('/api/update-apply', { id, status });
+    fetchData();
+}
+
+function viewApply(id) {
+    const apply = db.applies.find(a => a.id === id);
+    alert(`BAŞVURU DETAYI:\n\n${apply.content}`);
+}
+
+// --- DESTEK TALEBİ YÖNETİMİ (TICKETS) ---
+function renderTickets() {
+    const list = document.getElementById("ticketsList");
+    if (!list) return;
+
+    list.innerHTML = db.tickets.map(t => `
+        <tr>
+            <td>#${t.id.slice(-4)}</td>
+            <td>${t.user}</td>
+            <td>${t.title}</td>
+            <td>${t.category}</td>
+            <td><span class="badge ${t.status === 'Kapandı' ? 'badge-danger' : 'badge-success'}">${t.status}</span></td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="adminViewTicket('${t.id}')">Yanıtla</button>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6">Talep bulunamadı.</td></tr>';
+}
+
+function adminViewTicket(id) {
+    activeTicketId = id;
+    const ticket = db.tickets.find(t => t.id === id);
+    const msgHtml = ticket.messages.map(m => `
+        <div style="margin-bottom:10px; padding:10px; border-radius:10px; background:${m.sender === 'Admin' ? 'rgba(0,212,170,0.1)' : 'rgba(255,255,255,0.05)'}">
+            <b style="color:var(--primary)">${m.sender}:</b> ${m.text}
+        </div>
+    `).join('');
+    
+    // Basit bir Prompt/Modal simülasyonu (Bunu özel modala çevirebilirsin)
+    const reply = prompt(`${ticket.user} kullanıcısının talebi:\n\n${msgHtml.replace(/<[^>]*>/g, '')}\n\nYanıtınız:`);
+    if(reply) {
+        sendAdminReply(id, reply);
+    }
+}
+
+async function sendAdminReply(ticketId, text) {
+    await post('/reply-ticket', { ticketId, sender: 'Admin', text, isAdmin: true });
+    alert("Yanıt gönderildi!");
+    fetchData();
+}
+
+// --- ÜRÜN EKLEME FONKSİYONU ---
+async function addProduct() {
+    const name = document.getElementById('modalPName').value;
+    const price = document.getElementById('modalPPrice').value;
+    const category = document.getElementById('modalPCategory').value;
+    const emoji = document.getElementById('pImage').value;
+
+    if(!name || !price || !category) return alert("Lütfen tüm alanları doldurun!");
+
+    await post('/api/add', {
+        table: 'products',
+        data: { id: Date.now().toString(), name, price: Number(price), category, image: emoji || "📦" }
+    });
+
+    closeModal('productModal');
+    fetchData();
+}
+
+// Yardımcı Fonksiyon: API POST
+async function post(path, data) {
+    const res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return res.json();
+}
+
+// Sayfa yüklendiğinde verileri çek
+window.onload = () => {
+    fetchData();
+    showSection('dashboard', document.querySelector('.nav-item'));
+};
     window.onload = () => {
         fetchData();
         showSection('dashboard', document.querySelector('.nav-item.active'));
@@ -2058,3 +2206,4 @@
 </script>
 </body>
 </html>
+
