@@ -18,6 +18,21 @@
         <button class="btn" onclick="sendApply()">Başvuruyu Gönder</button>
     </div>
     <script>
+        const fullContent = `
+    AD: ${document.getElementById('realName').value}
+    IGN: ${document.getElementById('gameName').value}
+    İLETİŞİM: ${document.getElementById('contact').value}
+    YAŞ: ${document.getElementById('age').value}
+    YETKİ: ${document.getElementById('rank').value}
+    NEDEN: ${document.getElementById('whyUs').value}
+    TECRÜBE: ${document.getElementById('experience').value}
+`;
+
+await fetch('https://atlasnetwork.tahaozturk804.workers.dev/submit-apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user, content: fullContent })
+});
         async function sendApply() {
             const user = decodeURIComponent((document.cookie.match(/(?:^|; )atlas_session=([^;]*)/) || [])[1] || '');
             const content = `Ad: ${document.getElementById('name').value}\nBilgi: ${document.getElementById('exp').value}`;
@@ -27,3 +42,4 @@
     </script>
 </body>
 </html>
+
