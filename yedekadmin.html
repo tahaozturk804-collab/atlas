@@ -1701,7 +1701,7 @@
         "applications.view", "applications.review", "logs.view", "settings.manage"
     ];
 
-    let db = { users: [], products: [], roles: [], categories: [], tickets: [], applies: [] };
+    let db = { users: [], products: [], roles: [], categories: [], tickets: [], applies: [], coupons: [], orders: [] };
     let currentUser = null;
 
     function safeArray(val) {
@@ -1734,9 +1734,14 @@
             db.roles = safeArray(db.roles);
             db.categories = safeArray(db.categories);
             db.products = safeArray(db.products);
+            db.coupons = safeArray(db.coupons);
+            db.orders = safeArray(db.orders);
             renderUsers();
             renderRoles();
             renderPermissionsTable();
+            renderProducts();
+            renderCategories();
+            renderCoupons();
             updateDropdowns();
             buildPermissionsGrid();
         } catch (e) {
@@ -1858,6 +1863,65 @@
         tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Yetkili kullanıcı bulunamadı.</td></tr>';
     }
 
+    function renderProducts() {
+        const tbody = document.getElementById('productsList');
+        if (!tbody) return;
+
+        tbody.innerHTML = db.products.map(p => `
+            <tr>
+                <td>${p.name || '-'}</td>
+                <td>${p.category || 'Genel'}</td>
+                <td>₺${Number(p.price || 0)}</td>
+                <td>${p.stock ?? 'Sınırsız'}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRow('products','${p.id}')">Sil</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="5">Ürün bulunamadı.</td></tr>';
+    }
+
+    function renderCategories() {
+        const tbody = document.getElementById('categoriesList');
+        if (!tbody) return;
+
+        tbody.innerHTML = db.categories.map(c => {
+            const count = db.products.filter(p => p.category === c.name).length;
+            return `
+                <tr>
+                    <td>${c.name}</td>
+                    <td>${count}</td>
+                    <td><span class="badge badge-success">Aktif</span></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteRow('categories','${c.id}')">Sil</button></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4">Kategori bulunamadı.</td></tr>';
+    }
+
+    function renderCoupons() {
+        const tbody = document.getElementById('couponsList');
+        if (!tbody) return;
+
+        tbody.innerHTML = db.coupons.map(c => {
+            const used = Number(c.usedCount || 0);
+            const limit = Number(c.limit || 0);
+            return `
+                <tr>
+                    <td>${c.code}</td>
+                    <td>%${Number(c.discount || 0)}</td>
+                    <td>${used}/${limit || '∞'}</td>
+                    <td>${c.expiry || '-'}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteRow('coupons','${c.id}')">Sil</button></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="5">Kupon bulunamadı.</td></tr>';
+    }
+
+    async function deleteRow(table, id) {
+        if (!id) return;
+        await post('/api/delete', { table, id });
+        await fetchData();
+    }
+
     async function addProduct() {
         const modal = document.getElementById('productModal');
         if (!modal) return;
@@ -1962,7 +2026,27 @@
         console.warn(`${feature} henüz bu sürümde aktif değil.`);
     }
 
-    const addCoupon = () => notReady('Kupon ekleme');
+    async function addCoupon() {
+        const code = document.getElementById('couponCode')?.value.trim().toUpperCase();
+        const discount = Number(document.getElementById('couponDiscount')?.value || 0);
+        const limit = Number(document.getElementById('couponLimit')?.value || 0);
+        const expiry = document.getElementById('couponExpiry')?.value || null;
+
+        if (!code || !discount) {
+            alert('Kupon kodu ve indirim zorunlu.');
+            return;
+        }
+
+        await post('/api/add', {
+            table: 'coupons',
+            data: { id: Date.now().toString(), code, discount, limit, expiry, usedCount: 0 }
+        });
+
+        document.getElementById('couponCode').value = '';
+        document.getElementById('couponDiscount').value = '';
+        closeModal('couponModal');
+        await fetchData();
+    }
     const applyBulkDiscount = () => notReady('Toplu indirim');
     const refreshLogs = () => notReady('Log yenileme');
     const saveSettings = () => notReady('Ayar kaydetme');
