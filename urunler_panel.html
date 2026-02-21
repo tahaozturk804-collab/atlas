@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mağaza Yönetimi - AtlasNetwork</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #00ff88; --bg-dark: #0b0e11; --sidebar-bg: #0d1117; --card-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e; --danger: #ff4d4d; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-dark); color: var(--text-main); display: flex; }
+        .sidebar { width: 260px; background: var(--sidebar-bg); height: 100vh; position: fixed; border-right: 1px solid #30363d; display: flex; flex-direction: column; }
+        .sidebar-logo { padding: 30px; text-align: center; }
+        .sidebar-logo img { width: 60px; filter: drop-shadow(0 0 8px var(--primary)); }
+        .sidebar-logo h2 { color: var(--primary); font-size: 18px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-menu { padding: 10px 15px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); text-decoration: none; border-radius: 10px; transition: 0.3s; margin-bottom: 5px; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: rgba(0, 255, 136, 0.1); color: var(--primary); }
+        .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 40px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn-add { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .category-panel { background: var(--card-bg); border: 1px solid #30363d; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid #30363d; margin-right:8px; margin-bottom:8px; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .product-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 15px; padding: 20px; }
+        .product-img { width: 100%; height: 150px; background: #0b0e11; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .product-title { font-size: 18px; color: #fff; margin-bottom: 5px; font-weight: 700; }
+        .product-price { color: var(--primary); font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+        .product-actions { display: flex; gap: 10px; margin-top:12px; }
+        .btn-action { flex: 1; padding: 8px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-edit { background: #30363d; color: #fff; }
+        .btn-delete { background: rgba(255, 77, 77, 0.1); color: var(--danger); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo"><img src="https://img.icons8.com/neon/96/shield.png" alt="Atlas Logo"><h2>Atlas Admin</h2></div>
+        <nav class="nav-menu">
+            <a href="hesaplar.html" class="nav-item"><i class="fa-solid fa-users"></i> Kullanıcı Yönetimi</a>
+            <a href="urunler.html" class="nav-item active"><i class="fa-solid fa-cart-shopping"></i> Mağaza Yönetimi</a>
+            <a href="destek.html" class="nav-item"><i class="fa-solid fa-ticket"></i> Destek Sistemi</a>
+            <a href="basvurular.html" class="nav-item"><i class="fa-solid fa-file-signature"></i> Başvurular</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div><h1>🛒 Mağaza Yönetimi</h1><p style="color: var(--text-muted);">Ürünleri ve kategorileri yönet.</p></div>
+            <button class="btn-add" onclick="addProductPrompt()"><i class="fa-solid fa-plus"></i> Yeni Ürün Ekle</button>
+        </div>
+
+        <section class="category-panel">
+          <h3 style="margin-top:0;">Kategoriler</h3>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input id="newCategoryName" placeholder="Yeni kategori adı" style="flex:1; background:#0b0e11; border:1px solid #30363d; color:#fff; border-radius:8px; padding:10px;">
+            <button class="btn-add" onclick="addCategory()">Kategori Ekle</button>
+          </div>
+          <div id="categoryList"></div>
+        </section>
+
+        <div class="product-grid" id="productGrid"><p style="color:#8b949e;">Ürünler yükleniyor...</p></div>
+    </main>
+
+<script>
+const API = 'https://atlasnetwork.tahaozturk804.workers.dev';
+let categoriesCache = [];
+const getCategoryName = (c) => (typeof c === 'string' ? c : (c?.name || ''));
+
+async function getAllData() {
+  const res = await fetch(`${API}/api/get-all`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function loadCategories() {
+  const list = document.getElementById('categoryList');
+  const data = await getAllData();
+  categoriesCache = data.categories || [];
+
+  if (!categoriesCache.length) {
+    list.innerHTML = '<span style="color:#8b949e;">Henüz kategori yok.</span>';
+    return;
+  }
+
+  list.innerHTML = categoriesCache.map(c => `<span class="chip">${getCategoryName(c)}<button onclick="deleteCategory('${(typeof c === 'string' ? c : c.id)}')" style="background:none;border:none;color:#ff4d4d;cursor:pointer;">✕</button></span>`).join('');
+}
+
+async function addCategory() {
+  const input = document.getElementById('newCategoryName');
+  const name = input.value.trim();
+  if (!name) return;
+  const exists = categoriesCache.some(c => getCategoryName(c).toLowerCase() === name.toLowerCase());
+  if (exists) return alert('Bu kategori zaten mevcut.');
+
+  const res = await fetch(`${API}/api/add`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'categories', data: { id: Date.now().toString(), name } })
+  });
+  if (!res.ok) return alert(await res.text());
+  input.value = '';
+  await loadCategories();
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Kategori silinsin mi?')) return;
+  const res = await fetch(`${API}/api/delete`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'categories', id })
+  });
+  if (!res.ok) return alert(await res.text());
+  await loadCategories();
+}
+
+async function loadProducts() {
+  const grid = document.getElementById('productGrid');
+  try {
+    const data = await getAllData();
+    const products = data.products || [];
+
+    if (!products.length) {
+      grid.innerHTML = '<p style="color:#8b949e;">Henüz ürün yok.</p>';
+      return;
+    }
+
+    grid.innerHTML = products.map(p => `
+      <div class="product-card">
+        <div class="product-img">${p.image || '📦'}</div>
+        <div class="product-title">${p.name || 'İsimsiz Ürün'}</div>
+        <div class="product-price">₺ ${Number(p.price || 0).toFixed(2)}</div>
+        <small style="color:#8b949e">Kategori: ${p.category || 'Genel'}</small>
+        <div class="product-actions">
+          <button class="btn-action btn-edit" onclick="editProduct('${p.id}')">Düzenle</button>
+          <button class="btn-action btn-delete" onclick="deleteProduct('${p.id}')">Sil</button>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    grid.innerHTML = '<p style="color:#ff4d4d;">Ürünler yüklenemedi.</p>';
+  }
+}
+
+async function askCategory(defaultValue = '') {
+  await loadCategories();
+  const options = ['Genel', ...categoriesCache.map(c => getCategoryName(c)).filter(Boolean)].filter((v, i, arr) => arr.indexOf(v) === i);
+  const selected = prompt(`Kategori seçin:\n${options.join(', ')}`, defaultValue || options[0]);
+  if (selected === null) return null;
+  return selected.trim() || 'Genel';
+}
+
+async function addProductPrompt() {
+  const name = prompt('Ürün adı girin:');
+  if (!name) return;
+  const priceText = prompt('Ürün fiyatı girin:', '0');
+  if (priceText === null) return;
+  const price = Number(priceText);
+  if (Number.isNaN(price)) return alert('Geçersiz fiyat.');
+  const category = await askCategory('Genel');
+  if (category === null) return;
+  const image = prompt('Emoji/Görsel metni (opsiyonel):', '📦') || '📦';
+
+  const res = await fetch(`${API}/api/add`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', data: { id: Date.now().toString(), name, price, category, image } })
+  });
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+async function editProduct(id) {
+  const name = prompt('Yeni ürün adı:');
+  if (!name) return;
+  const priceText = prompt('Yeni fiyat:', '0');
+  if (priceText === null) return;
+  const price = Number(priceText);
+  if (Number.isNaN(price)) return alert('Geçersiz fiyat.');
+  const category = await askCategory('Genel');
+  if (category === null) return;
+
+  const res = await fetch(`${API}/api/update`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', id, updates: { name, price, category } })
+  });
+
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Ürünü silmek istiyor musunuz?')) return;
+  const res = await fetch(`${API}/api/delete`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ table: 'products', id })
+  });
+  if (!res.ok) return alert(await res.text());
+  await loadProducts();
+}
+
+loadCategories();
+loadProducts();
+</script>
+</body>
+</html>
